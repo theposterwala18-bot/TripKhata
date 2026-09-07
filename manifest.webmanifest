@@ -1,0 +1,9 @@
+{
+  "name":"TripKhata",
+  "short_name":"TripKhata",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#fbfcfe",
+  "theme_color":"#0f172a",
+  "description":"Friends trip expense manager"
+}
