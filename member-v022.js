@@ -100,3 +100,30 @@
     quickInput.value=''; parsePreview.textContent=''; save(); renderTrip(); toastMsg('Expense added');
   };
 })();
+
+/* expose member manage controls on the actual Members tab */
+(function(){
+  window.renderMembers=function(){
+    const t=getTrip(), el=document.getElementById('page-members');
+    if(!t){el.innerHTML='<div class="card">Open/create a trip first.</div>';return}
+    const x=totals(t);
+    el.innerHTML=`
+      <div class="row">
+        <div><div class="cardtitle">${esc(t.name)} Members</div><div class="muted small">${t.members.length} friends</div></div>
+        <div class="grow"></div>
+        <button class="btn primary" onclick="openMemberSheet()">＋ Add</button>
+      </div>
+      <div class="card">
+        ${t.members.map((m,i)=>`
+          <div class="member">
+            <div class="avatar">${initials(m)}</div>
+            <div class="grow">
+              <b>${esc(m)}</b>
+              ${(t.inactiveMembers||[]).includes(m)?'<div class="muted tiny">Left trip • old hisab preserved</div>':`<div class="muted tiny">Paid ${fmt(t,x.paid[m])} • Share ${fmt(t,x.owed[m])}</div>`}
+            </div>
+            <div class="${x.bal[m]>=0?'plus':'minus'} amount">${x.bal[m]>=0?'+':''}${fmt(t,x.bal[m])}</div>
+            <button class="iconbtn" style="width:36px;height:36px;margin-left:5px" onclick='openMemberManage(${JSON.stringify(m)})'>⋮</button>
+          </div>`).join('')}
+      </div>`;
+  };
+})();
