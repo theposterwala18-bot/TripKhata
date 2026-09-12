@@ -38,3 +38,34 @@
     });
   };
 })();
+
+/* Visible build/version indicator */
+(function(){
+  function paintVersion(){
+    const v=window.TRIPKHATA_VERSION||'0.0.0';
+    document.title='TripKhata v'+v;
+    const top=document.querySelector('.topbar');
+    if(top && !document.getElementById('tkVersionBadge')){
+      const badge=document.createElement('span');
+      badge.id='tkVersionBadge';
+      badge.textContent='v'+v;
+      badge.style.cssText='font-size:10px;font-weight:900;color:#1677ff;background:#eef6ff;border:1px solid #d9eaff;border-radius:999px;padding:5px 8px;white-space:nowrap';
+      const sync=document.getElementById('syncBadge');
+      if(sync) top.insertBefore(badge,sync); else top.appendChild(badge);
+    }
+    const settings=document.getElementById('page-settings');
+    if(settings && !document.getElementById('tkVersionCard')){
+      const card=document.createElement('div');
+      card.id='tkVersionCard'; card.className='card';
+      card.innerHTML='<div class="row"><div class="grow"><b>App Version</b><div class="muted tiny">Use this to confirm latest build is open</div></div><span class="badge">v'+v+'</span></div>';
+      settings.appendChild(card);
+    }
+  }
+  const oldAll=window.renderAll;
+  window.renderAll=function(){oldAll();setTimeout(paintVersion,0)};
+  const oldSettings=window.renderSettings;
+  window.renderSettings=function(){oldSettings();setTimeout(paintVersion,0)};
+  const oldTrip=window.renderTrip;
+  window.renderTrip=function(){oldTrip();setTimeout(paintVersion,0)};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',paintVersion);else setTimeout(paintVersion,0);
+})();
