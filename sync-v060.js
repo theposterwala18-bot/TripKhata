@@ -52,7 +52,7 @@
       top.appendChild(b);
     }
     b.onclick=()=>window.tripKhataSyncNow();
-    const next=!navigator.onLine?'● Offline':window.TK_AUTH?.currentUser?(TRIPKHATA_CLOUD?.status==='synced'?'● Synced':'● Cloud'):'● Local';
+    const next=!navigator.onLine?'● Offline':window.TK_AUTH?.currentUser?(TRIPKHATA_CLOUD?.status==='synced'?'● Synced':TRIPKHATA_CLOUD?.status==='choice'?'● Choose':'● Cloud'):'● Local';
     if(b.textContent!==next)b.textContent=next;
     b.style.minWidth='68px';
   }
@@ -63,6 +63,18 @@
     await ref(u.uid).set({snapshot:x,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAtClient:Date.now(),updatedBy:device,version:window.TRIPKHATA_VERSION||'0.6.0'},{merge:true});
     last=h;status('synced');badge();
   }
+  function chooseSyncSource(){
+    return new Promise(resolve=>{
+      let old=document.getElementById('tkSyncChoice');if(old)old.remove();
+      const d=document.createElement('div');d.id='tkSyncChoice';
+      d.style.cssText='position:fixed;inset:0;z-index:2600;background:rgba(8,31,68,.68);display:grid;place-items:center;padding:16px;font-family:system-ui';
+      d.innerHTML='<div style="width:min(430px,100%);background:white;border-radius:22px;padding:22px;box-shadow:0 20px 60px #0005"><div style="font-size:22px;font-weight:900;color:#153d76">Cloud data found</div><div style="margin-top:8px;color:#65738a;line-height:1.5;font-size:14px">Is account te cloud data te is device te local data dono mil rahe ne. Safe tarike naal ik source choose karo. Choice karan ton pehla koi data overwrite nahi hovega.</div><button id="tkUseCloud" style="width:100%;margin-top:18px;padding:14px;border:0;border-radius:12px;background:#1677ff;color:white;font-weight:900">Use Cloud Data</button><button id="tkUseDevice" style="width:100%;margin-top:10px;padding:14px;border:1px solid #d7e0ec;border-radius:12px;background:white;color:#17345f;font-weight:900">Keep This Device Data</button><div style="margin-top:12px;font-size:11px;color:#8a94a6;text-align:center">You can switch browser tabs; this screen will stay until you choose.</div></div>';
+      document.body.appendChild(d);
+      document.getElementById('tkUseCloud').onclick=()=>{d.remove();resolve('cloud')};
+      document.getElementById('tkUseDevice').onclick=()=>{d.remove();resolve('device')};
+    });
+  }
+
   async function first(u){
     const decisionKey='tripkhata_cloud_initialized_'+u.uid;
     const userRef=db.collection('users').doc(u.uid);
@@ -73,9 +85,11 @@
     if(sig(remote)===sig(local)){localStorage.setItem(decisionKey,'1');last=sig(local);status('synced');return}
     if(!meaningful(local)){localStorage.setItem(decisionKey,'1');apply(remote,true);return}
     if(localStorage.getItem(decisionKey)==='1'){last=sig(local);await push(false);status('synced');return}
-    const useCloud=confirm('TripKhata cloud data found.\n\nOK = Cloud data load karo\nCancel = Is device da current data cloud te save karo');
+    status('choice');
+    const choice=await chooseSyncSource();
     localStorage.setItem(decisionKey,'1');
-    if(useCloud)apply(remote,true);else await push(true);
+    if(choice==='cloud'){apply(remote,true);return}
+    await push(true);
   }
   function watch(u){
     if(off)off();off=ref(u.uid).onSnapshot(d=>{
