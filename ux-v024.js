@@ -45,14 +45,15 @@
     const v=window.TRIPKHATA_VERSION||'0.0.0';
     document.title='TripKhata v'+v;
     const top=document.querySelector('.topbar');
-    if(top && !document.getElementById('tkVersionBadge')){
-      const badge=document.createElement('span');
+    let badge=document.getElementById('tkVersionBadge');
+    if(top && !badge){
+      badge=document.createElement('span');
       badge.id='tkVersionBadge';
-      badge.textContent='v'+v;
-      badge.style.cssText='font-size:10px;font-weight:900;color:#1677ff;background:#eef6ff;border:1px solid #d9eaff;border-radius:999px;padding:5px 8px;white-space:nowrap';
+      badge.style.cssText='font-size:10px;font-weight:900;color:#1677ff;background:#eef6ff;border:1px solid #d9eaff;border-radius:999px;padding:5px 8px;white-space:nowrap;min-width:42px;text-align:center;display:inline-block';
       const sync=document.getElementById('syncBadge');
       if(sync) top.insertBefore(badge,sync); else top.appendChild(badge);
     }
+    if(badge && badge.textContent!=='v'+v) badge.textContent='v'+v;
     const settings=document.getElementById('page-settings');
     if(settings && !document.getElementById('tkVersionCard')){
       const card=document.createElement('div');
@@ -68,4 +69,5 @@
   const oldTrip=window.renderTrip;
   window.renderTrip=function(){oldTrip();setTimeout(paintVersion,0)};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',paintVersion);else setTimeout(paintVersion,0);
+  setInterval(paintVersion,1000);
 })();
