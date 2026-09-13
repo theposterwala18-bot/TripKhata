@@ -1,7 +1,7 @@
 /* TripKhata v0.5.0 — Independent Customer & Supplier Khata modules */
 (function(){
   const KEY='tripkhata_khatabook_v1';
-  const KBV='0.5.0';
+  const KBV=window.TRIPKHATA_VERSION||'0.5.2';
   let kb=JSON.parse(localStorage.getItem(KEY)||'null')||{customers:[],suppliers:[],profile:{name:state?.user?.name||'My Khata'}};
   function ksave(){localStorage.setItem(KEY,JSON.stringify(kb))}
   function kid(){return Date.now()+Math.floor(Math.random()*10000)}
@@ -42,8 +42,13 @@
     const isC=type==='customer';
     host().innerHTML=`<div style="position:fixed;inset:0;z-index:500;background:#f3f6f9;overflow:auto;font-family:Inter,system-ui,-apple-system,sans-serif">
       <div style="position:sticky;top:0;z-index:5;background:#1558b0;color:#fff;padding:18px 16px 14px">
-        <div style="display:flex;align-items:center;gap:10px"><button onclick="closeKhataBook()" style="border:0;background:transparent;color:#fff;font-size:28px">←</button><div style="flex:1"><div style="font-size:20px;font-weight:850">${escK(kb.profile.name||'My Khata')}</div><div style="font-size:11px;opacity:.85">Khata Book • v${KBV}</div></div><button onclick="kbOpenMain('customer')" style="border:0;background:transparent;color:#fff;font-size:21px">👥</button></div>
-        <div style="display:flex;gap:22px;margin-top:18px"><button onclick="kbOpenMain('customer')" style="border:0;background:transparent;color:#fff;font-size:16px;padding:0 2px 8px;border-bottom:${isC?'4px solid white':'4px solid transparent'}">Customers</button><button onclick="kbOpenMain('supplier')" style="border:0;background:transparent;color:#fff;font-size:16px;padding:0 2px 8px;border-bottom:${!isC?'4px solid white':'4px solid transparent'}">Suppliers</button></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button onclick="closeKhataBook()" style="border:0;background:transparent;color:#fff;font-size:28px">←</button>
+          <div style="flex:1">
+            <div style="font-size:20px;font-weight:850">${isC?'Customer Khata':'Suppliers'}</div>
+            <div style="font-size:11px;opacity:.85">${escK(kb.profile.name||'My Khata')} • v${KBV}</div>
+          </div>
+        </div>
       </div>${inner}</div>`;
   }
 
@@ -150,8 +155,31 @@
     const list=type==='customer'?kb.customers:kb.suppliers,isC=type==='customer',t=totals(type);let s=`*${isC?'Customer':'Supplier'} Khata Summary*\n`;if(isC)s+=`You'll Get: ${money(t.a)}\nYou'll Give: ${money(t.b)}\n\n`;else s+=`Total Payable: ${money(t.a)}\n\n`;list.forEach(x=>{const b=entityBal(x,type);s+=`• ${x.name}: ${money(Math.abs(b))} ${isC?(b>0?'GET':b<0?'GIVE':'CLEAR'):(b>0?'PAY':'CLEAR')}\n`});if(navigator.share)navigator.share({title:'Khata Summary',text:s}).catch(()=>{});else{navigator.clipboard?.writeText(s);alert('Summary copied')}}
   window.kbEditEntity=function(type,eid){
     const list=type==='customer'?kb.customers:kb.suppliers,x=list.find(z=>z.id===eid);if(!x)return;
-    shell(type,`<div style="padding:16px"><div style="background:#fff;border-radius:18px;padding:18px"><div style="font-size:21px;font-weight:900">Edit ${type==='customer'?'Customer':'Supplier'}</div><div style="margin-top:14px">Name</div><input id="kbName" value="${escK(x.name)}" style="width:100%;padding:13px;border:1px solid #ddd;border-radius:12px"><div style="margin-top:12px">Phone</div><input id="kbPhone" value="${escK(x.phone||'')}" style="width:100%;padding:13px;border:1px solid #ddd;border-radius:12px"><button onclick="kbUpdateEntity('${type}',${eid})" style="width:100%;margin-top:16px;padding:14px;border:0;border-radius:12px;background:#1558b0;color:#fff;font-weight:850">Save Changes</button><button onclick="kbDeleteEntity('${type}',${eid})" style="width:100%;margin-top:9px;padding:14px;border:1px solid #d33;border-radius:12px;background:#fff;color:#d33;font-weight:800">Delete ${type==='customer'?'Customer':'Supplier'}</button></div></div>`);
+    shell(type,`<div style="padding:16px"><div style="background:#fff;border-radius:18px;padding:18px"><div style="font-size:21px;font-weight:900">Edit ${type==='customer'?'Customer':'Supplier'}</div><div style="margin-top:14px">Name</div><input id="kbName" value="${escK(x.name)}" style="width:100%;padding:13px;border:1px solid #ddd;border-radius:12px"><div style="margin-top:12px">Phone</div><input id="kbPhone" value="${escK(x.phone||'')}" style="width:100%;padding:13px;border:1px solid #ddd;border-radius:12px"><button onclick="kbUpdateEntity('${type}',${eid})" style="width:100%;margin-top:16px;padding:14px;border:0;border-radius:12px;background:#1558b0;color:#fff;font-weight:850">Save Changes</button><button onclick="kbTransferEntity('${type}',${eid})" style="width:100%;margin-top:9px;padding:14px;border:1px solid #1558b0;border-radius:12px;background:#eef5ff;color:#1558b0;font-weight:850">${type==='customer'?'Move / Copy to Suppliers':'Move / Copy to Customer Khata'}</button><button onclick="kbDeleteEntity('${type}',${eid})" style="width:100%;margin-top:9px;padding:14px;border:1px solid #d33;border-radius:12px;background:#fff;color:#d33;font-weight:800">Delete ${type==='customer'?'Customer':'Supplier'}</button></div></div>`);
   };
+  window.kbTransferEntity=function(type,eid){
+    const src=type==='customer'?kb.customers:kb.suppliers;
+    const dst=type==='customer'?kb.suppliers:kb.customers;
+    const x=src.find(z=>z.id===eid);if(!x)return;
+    const targetLabel=type==='customer'?'Supplier':'Customer';
+    const exists=dst.find(z=>(z.phone&&x.phone&&z.phone===x.phone)||z.name.toLowerCase()===x.name.toLowerCase());
+    if(exists){alert(targetLabel+' already exists.');return}
+    const bal=entityBal(x,type);
+    if(Math.abs(bal)<0.005){
+      if(confirm('Balance clear hai. '+x.name+' nu '+targetLabel+' vich MOVE karna? Old ledger remove ho ju, contact safe transfer hovega.')){
+        dst.unshift({id:kid(),name:x.name,phone:x.phone||'',entries:[],createdAt:new Date().toISOString(),movedFrom:type});
+        const key=type==='customer'?'customers':'suppliers';
+        kb[key]=kb[key].filter(z=>z.id!==eid);
+        ksave();kbOpenMain(type==='customer'?'supplier':'customer');
+      }
+    }else{
+      if(confirm('Is khate da pending balance '+money(Math.abs(bal))+' hai. History mix karna safe nahi. Contact nu '+targetLabel+' vich COPY karna te old ledger preserve rakhna?')){
+        dst.unshift({id:kid(),name:x.name,phone:x.phone||'',entries:[],createdAt:new Date().toISOString(),copiedFrom:type});
+        ksave();kbOpenMain(type==='customer'?'supplier':'customer');
+      }
+    }
+  };
+
   window.kbUpdateEntity=function(type,eid){const list=type==='customer'?kb.customers:kb.suppliers,x=list.find(z=>z.id===eid);x.name=kbName.value.trim();x.phone=kbPhone.value.trim();ksave();kbOpenLedger(type,eid)};
   window.kbDeleteEntity=function(type,eid){if(!confirm('Delete entire khata and all entries?'))return;const key=type==='customer'?'customers':'suppliers';kb[key]=kb[key].filter(x=>x.id!==eid);ksave();kbOpenMain(type)};
 
