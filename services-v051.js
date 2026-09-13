@@ -1,6 +1,6 @@
-/* TripKhata v0.5.1 — Services module tabs */
+/* TripKhata v0.5.2 — Services module tabs */
 (function(){
-  const V='0.5.1';
+  const V='0.5.2';
 
   function ensureServiceBar(){
     const app=document.getElementById('app');
