@@ -11,11 +11,19 @@
   function snap(){
     let trip=null;try{if(typeof state!=='undefined')trip=cleanData(state)}catch(e){}
     const local={};
-    for(let i=0;i<localStorage.length;i++){
-      const k=localStorage.key(i);
-      if(k&&/tripkhata|khata/i.test(k)&&k!=='tripkhata_device_id'){
-        let v=localStorage.getItem(k);if(v!=null&&v.length<2000000){if(k==='tripkhata_khatabook_v1'){try{v=JSON.stringify(cleanData(JSON.parse(v)))}catch(e){}}local[k]=v;}
-      }
+    const APP_KEYS=[
+      'tripkhata_khatabook_v1',
+      'tripkhata_state',
+      'tripkhata_data',
+      'tripkhata_backup',
+      'tripkhata_profile',
+      'tripkhata_settings'
+    ];
+    for(const k of APP_KEYS){
+      let v=localStorage.getItem(k);
+      if(v==null||v.length>=2000000)continue;
+      if(k==='tripkhata_khatabook_v1'){try{v=JSON.stringify(cleanData(JSON.parse(v)))}catch(e){}}
+      local[k]=v;
     }
     return {tripState:trip,local};
   }
@@ -32,7 +40,8 @@
         Object.keys(state).forEach(k=>delete state[k]);Object.assign(state,JSON.parse(JSON.stringify(x.tripState)));
         if(typeof save==='function')save();
       }
-      Object.entries(x.local||{}).forEach(([k,v])=>localStorage.setItem(k,v));
+      const SAFE_KEYS=new Set(['tripkhata_khatabook_v1','tripkhata_state','tripkhata_data','tripkhata_backup','tripkhata_profile','tripkhata_settings']);
+      Object.entries(x.local||{}).forEach(([k,v])=>{if(SAFE_KEYS.has(k))localStorage.setItem(k,v)});
       last=sig(snap());
       if(reload)setTimeout(()=>location.reload(),300);else if(typeof renderAll==='function')renderAll();
     }catch(e){console.error('TripKhata cloud restore',e)}
@@ -77,9 +86,17 @@
 
   async function first(u){
     const decisionKey='tripkhata_cloud_initialized_'+u.uid;
+    const cleanKey='tripkhata_clean_sync_v060e_'+u.uid;
     const userRef=db.collection('users').doc(u.uid);
     await userRef.set({email:u.email||'',displayName:u.displayName||'',lastLogin:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
     const d=await ref(u.uid).get(),local=snap();
+    if(localStorage.getItem(cleanKey)!=='1'){
+      localStorage.setItem(cleanKey,'1');
+      await push(true);
+      last=sig(local);
+      status('synced');
+      return;
+    }
     if(!d.exists||!d.data()?.snapshot){localStorage.setItem(decisionKey,'1');await push(true);return}
     const remote=d.data().snapshot;
     if(sig(remote)===sig(local)){localStorage.setItem(decisionKey,'1');last=sig(local);status('synced');return}
