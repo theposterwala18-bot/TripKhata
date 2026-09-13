@@ -7,13 +7,14 @@
     if(window.firebase&&firebase.firestore)return Promise.resolve();
     return new Promise((ok,fail)=>{const s=document.createElement('script');s.src='https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js';s.onload=ok;s.onerror=fail;document.head.appendChild(s)});
   }
+  function cleanData(x){try{return JSON.parse(JSON.stringify(x,(k,v)=>{if(typeof v==='string'&&v.startsWith('data:image/'))return null;if(typeof v==='string'&&v.length>200000)return null;return v}))}catch(e){return x}}
   function snap(){
-    let trip=null;try{if(typeof state!=='undefined')trip=JSON.parse(JSON.stringify(state))}catch(e){}
+    let trip=null;try{if(typeof state!=='undefined')trip=cleanData(state)}catch(e){}
     const local={};
     for(let i=0;i<localStorage.length;i++){
       const k=localStorage.key(i);
       if(k&&/tripkhata|khata/i.test(k)&&k!=='tripkhata_device_id'){
-        const v=localStorage.getItem(k);if(v!=null&&v.length<2000000)local[k]=v;
+        let v=localStorage.getItem(k);if(v!=null&&v.length<2000000){if(k==='tripkhata_khatabook_v1'){try{v=JSON.stringify(cleanData(JSON.parse(v)))}catch(e){}}local[k]=v;}
       }
     }
     return {tripState:trip,local};
