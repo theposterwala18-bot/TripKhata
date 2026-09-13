@@ -3,10 +3,9 @@
   const V='0.5.2';
 
   function ensureServiceBar(){
-    const app=document.getElementById('app');
-    if(!app || document.getElementById('tkServiceBar')) return;
-    const top=document.querySelector('.topbar');
-    if(!top) return;
+    if(document.getElementById('tkServiceBar')) return;
+const top=document.querySelector('.topbar');
+if(!top) return;
 
     const bar=document.createElement('div');
     bar.id='tkServiceBar';
