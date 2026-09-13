@@ -25,8 +25,8 @@
   }
   function badge(){
     const top=document.querySelector('.topbar');if(!top||!window.TK_AUTH)return;
-    let b=document.getElementById('tkAccountBadge');if(!b){b=document.createElement('button');b.id='tkAccountBadge';b.className='iconbtn';b.style.cssText='font-size:11px;padding:6px 8px';b.onclick=()=>window.tripKhataAccount();top.appendChild(b)}
-    const u=TK_AUTH.currentUser;b.textContent=u?'👤 '+(u.displayName||u.email||'Account'):'👤 Login';
+    let b=document.getElementById('tkAccountBadge');if(!b){b=document.createElement('button');b.id='tkAccountBadge';b.className='iconbtn';b.style.cssText='font-size:14px;padding:6px 8px;min-width:34px;width:34px;text-align:center';b.onclick=()=>window.tripKhataAccount();top.appendChild(b)}
+    const u=TK_AUTH.currentUser;const next=u?'👤':'👤';if(b.textContent!==next)b.textContent=next;b.title=u?((u.displayName||'')+' '+(u.email||'')):'Login / Signup';
   }
   window.tripKhataAccount=function(){const u=window.TK_AUTH?.currentUser;if(!u)return show('login');if(confirm((u.displayName||'')+'\n'+(u.email||'')+'\n\nSign out?'))TK_AUTH.signOut()};
   async function init(){
