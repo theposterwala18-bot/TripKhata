@@ -40,12 +40,21 @@
   function ref(uid){return db.collection('users').doc(uid).collection('appState').doc('main')}
   function status(txt){
     window.TRIPKHATA_CLOUD=window.TRIPKHATA_CLOUD||{};TRIPKHATA_CLOUD.status=txt;TRIPKHATA_CLOUD.lastSync=txt==='synced'?new Date():TRIPKHATA_CLOUD.lastSync;
-    const b=document.getElementById('tkSyncBadge');if(b)b.textContent=txt==='synced'?'☁ Synced':txt==='offline'?'☁ Offline':'☁ '+txt;
+    const b=document.getElementById('syncBadge')||document.getElementById('tkSyncBadge');if(b){const t=txt==='synced'?'● Synced':txt==='offline'?'● Offline':'● '+txt;if(b.textContent!==t)b.textContent=t;b.style.minWidth='68px'}
   }
   function badge(){
-    const top=document.querySelector('.topbar');if(!top)return;let b=document.getElementById('tkSyncBadge');
-    if(!b){b=document.createElement('button');b.id='tkSyncBadge';b.className='iconbtn';b.style.cssText='font-size:11px;padding:6px 8px';b.onclick=()=>window.tripKhataSyncNow();top.appendChild(b)}
-    if(!navigator.onLine)b.textContent='☁ Offline';else if(window.TK_AUTH?.currentUser)b.textContent='☁ '+(TRIPKHATA_CLOUD?.status==='synced'?'Synced':'Cloud');else b.textContent='☁ Local';
+    const top=document.querySelector('.topbar');if(!top)return;
+    let b=document.getElementById('syncBadge');
+    if(!b){b=document.getElementById('tkSyncBadge')}
+    if(!b){
+      b=document.createElement('button');b.id='tkSyncBadge';b.className='iconbtn';
+      b.style.cssText='font-size:11px;padding:6px 8px;min-width:68px;text-align:center';
+      top.appendChild(b);
+    }
+    b.onclick=()=>window.tripKhataSyncNow();
+    const next=!navigator.onLine?'● Offline':window.TK_AUTH?.currentUser?(TRIPKHATA_CLOUD?.status==='synced'?'● Synced':'● Cloud'):'● Local';
+    if(b.textContent!==next)b.textContent=next;
+    b.style.minWidth='68px';
   }
   async function push(force){
     const u=window.TK_AUTH?.currentUser;if(!u||!db||!navigator.onLine)return;
@@ -55,14 +64,17 @@
     last=h;status('synced');badge();
   }
   async function first(u){
+    const decisionKey='tripkhata_cloud_initialized_'+u.uid;
     const userRef=db.collection('users').doc(u.uid);
     await userRef.set({email:u.email||'',displayName:u.displayName||'',lastLogin:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
     const d=await ref(u.uid).get(),local=snap();
-    if(!d.exists||!d.data()?.snapshot){await push(true);return}
+    if(!d.exists||!d.data()?.snapshot){localStorage.setItem(decisionKey,'1');await push(true);return}
     const remote=d.data().snapshot;
-    if(sig(remote)===sig(local)){last=sig(local);status('synced');return}
-    if(!meaningful(local)){apply(remote,true);return}
+    if(sig(remote)===sig(local)){localStorage.setItem(decisionKey,'1');last=sig(local);status('synced');return}
+    if(!meaningful(local)){localStorage.setItem(decisionKey,'1');apply(remote,true);return}
+    if(localStorage.getItem(decisionKey)==='1'){last=sig(local);await push(false);status('synced');return}
     const useCloud=confirm('TripKhata cloud data found.\n\nOK = Cloud data load karo\nCancel = Is device da current data cloud te save karo');
+    localStorage.setItem(decisionKey,'1');
     if(useCloud)apply(remote,true);else await push(true);
   }
   function watch(u){
