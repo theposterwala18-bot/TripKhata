@@ -9,7 +9,7 @@
   }
   function cleanData(x){try{return JSON.parse(JSON.stringify(x,(k,v)=>{if(typeof v==='string'&&v.startsWith('data:image/'))return null;if(typeof v==='string'&&v.length>200000)return null;return v}))}catch(e){return x}}
   function snap(){
-    let trip=null;try{if(typeof state!=='undefined')trip=cleanData(state)}catch(e){}
+    let trip=null;try{if(typeof state!=='undefined'){trip=cleanData(state);if(trip&&typeof trip==='object'){delete trip.user;delete trip.cloud;delete trip.login;delete trip.auth;}}}catch(e){}
     const local={};
     const APP_KEYS=[
       'tripkhata_khatabook_v1',
@@ -37,13 +37,17 @@
     if(!x)return;
     try{
       if(x.tripState&&typeof state!=='undefined'){
+        const keepUser=state.user?JSON.parse(JSON.stringify(state.user)):null;
+        const keepCloud=state.cloud?JSON.parse(JSON.stringify(state.cloud)):null;
         Object.keys(state).forEach(k=>delete state[k]);Object.assign(state,JSON.parse(JSON.stringify(x.tripState)));
+        if(keepUser)state.user=keepUser;
+        if(keepCloud)state.cloud=keepCloud;
         if(typeof save==='function')save();
       }
       const SAFE_KEYS=new Set(['tripkhata_khatabook_v1','tripkhata_state','tripkhata_data','tripkhata_backup','tripkhata_profile','tripkhata_settings']);
       Object.entries(x.local||{}).forEach(([k,v])=>{if(SAFE_KEYS.has(k))localStorage.setItem(k,v)});
       last=sig(snap());
-      if(reload)setTimeout(()=>location.reload(),300);else if(typeof renderAll==='function')renderAll();
+      if(typeof renderAll==='function')setTimeout(renderAll,60);
     }catch(e){console.error('TripKhata cloud restore',e)}
   }
   function ref(uid){return db.collection('users').doc(uid).collection('appState').doc('main')}
@@ -120,6 +124,7 @@
       clearInterval(timer);if(off){off();off=null}
       await loadFirestore();db=firebase.firestore();try{await db.enablePersistence({synchronizeTabs:true})}catch(e){}
       window.TRIPKHATA_CLOUD=window.TRIPKHATA_CLOUD||{};TRIPKHATA_CLOUD.enabled=true;
+      try{if(typeof state!=='undefined'){state.cloud={enabled:true,provider:'firebase'};if(typeof save==='function')save();}}catch(e){}
       await first(u);watch(u);timer=setInterval(()=>push(false).catch(()=>{}),12000);badge();
     }catch(e){console.error(e);status('error');badge()}
   };
