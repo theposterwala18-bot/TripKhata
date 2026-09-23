@@ -52,10 +52,8 @@
     let debit=0,credit=0;(x.entries||[]).forEach(e=>{if(e.kind==='gave')debit+=Number(e.amount)||0;else if(e.kind==='got')credit+=Number(e.amount)||0});
     return {debit:Math.round(debit*100)/100,credit:Math.round(credit*100)/100,balance:Math.round((debit-credit)*100)/100};
   }
-  window.kbToggleLang=function(type,eid){
-    kb.profile.lang=isPa()?'en':'pa';ksave();
-    if(eid!=null)kbOpenLedger(type,eid);else kbOpenMain(type);
-  };
+  window.kbLangReturn=null;
+  window.kbToggleLang=function(){kb.profile.lang=isPa()?'en':'pa';ksave();if(typeof window.kbLangReturn==='function')window.kbLangReturn()};
   function entityBal(x,type){
     let b=0;
     (x.entries||[]).forEach(e=>{
@@ -95,12 +93,13 @@
           <div style="flex:1">
             <div style="font-size:20px;font-weight:850">${isC?tx('customerKhata'):tx('suppliers')}</div>
             <div style="font-size:11px;opacity:.85">${escK(kb.profile.name||'My Khata')} • v${KBV}</div>
-          </div><button onclick="kbToggleLang('${type}')" style="border:1px solid #ffffff66;background:#ffffff18;color:#fff;border-radius:10px;padding:7px 9px;font-size:12px;font-weight:800">${isPa()?'EN':'ਪੰ'}</button>
+          </div><button onclick="kbToggleLang()" style="border:1px solid #ffffff66;background:#ffffff18;color:#fff;border-radius:10px;padding:7px 9px;font-size:12px;font-weight:800">${isPa()?'EN':'ਪੰ'}</button>
         </div>
       </div>${inner}</div>`;
   }
 
   window.kbOpenMain=function(type='customer'){
+    window.kbLangReturn=()=>kbOpenMain(type);
     const list=type==='customer'?kb.customers:kb.suppliers,t=totals(type),isC=type==='customer';
     shell(type,`<div style="padding:14px 14px 90px">
       <div style="background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.08)">
@@ -117,7 +116,7 @@
     return list.map(x=>{const b=entityBal(x,type),isC=type==='customer';return `<div onclick="kbOpenLedger('${type}',${x.id})" style="background:#fff;border-bottom:1px solid #e7e7e7;padding:14px 10px;display:flex;gap:12px;align-items:center">
       <div style="width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:${isC?'#3778d0':'#348c55'};color:white;font-weight:800">${escK((x.name||'?').split(/\s+/).map(a=>a[0]).join('').slice(0,2).toUpperCase())}</div>
       <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escK(x.name)}</div><div style="color:#999;font-size:13px">${x.phone?escK(x.phone):'No phone'} • ${x.entries?.length||0} entries</div></div>
-      <div style="text-align:right;font-weight:850;color:${b===0?'#1558b0':(isC?(b>0?'#c33':'#388a4d'):(b>0?'#388a4d':'#c33'))}">${money(Math.abs(b))}<div style="font-size:12px;font-weight:500;color:#999">${isC?(b>0?"You'll Get":b<0?"You'll Give":'Clear'):(b>0?"You'll Give":b<0?"Advance":'Clear')}</div></div>
+      <div style="text-align:right;font-weight:850;color:${b===0?'#1558b0':(isC?(b>0?'#c33':'#388a4d'):(b>0?'#388a4d':'#c33'))}">${money(Math.abs(b))}<div style="font-size:12px;font-weight:500;color:#999">${isC?(b>0?tx('youWillGet'):b<0?tx('youWillGive'):(isPa()?'ਕਲੀਅਰ':'Clear')):(b>0?"You'll Give":b<0?"Advance":'Clear')}</div></div>
     </div>`}).join('')||'<div style="padding:30px;text-align:center;color:#888">No records yet.</div>';
   }
   window.kbFilterList=function(type){
@@ -144,8 +143,8 @@
   };
 
   window.kbOpenLedger=function(type,eid){
+    window.kbLangReturn=()=>kbOpenLedger(type,eid);
     const list=type==='customer'?kb.customers:kb.suppliers,x=list.find(z=>z.id===eid);if(!x)return;const b=entityBal(x,type),isC=type==='customer';
-    const prevToggle=window.kbToggleLang;window.kbToggleLang=function(t){kb.profile.lang=isPa()?'en':'pa';ksave();kbOpenLedger(type,eid)};
     shell(type,`<div style="padding:14px 14px 100px">
       <div style="background:#fff;border-radius:18px;padding:15px;display:flex;gap:12px;align-items:center"><div style="width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:#1480ee;color:white;font-size:21px">${escK(x.name.split(/\s+/).map(a=>a[0]).join('').slice(0,2).toUpperCase())}</div><div style="flex:1"><div style="font-size:20px;font-weight:850">${escK(x.name)}</div><div style="color:#777">${escK(x.phone||'No phone')}</div></div><button onclick="kbEditEntity('${type}',${eid})" style="border:0;background:#f0f5fb;border-radius:11px;padding:10px">⋮</button></div>
       <div style="background:#fff;border-radius:18px;margin-top:12px;padding:17px"><div style="display:flex;justify-content:space-between"><b>${isC?(b>=0?tx('youWillGet'):tx('youWillGive')):(b>=0?'You will give':'Advance paid')}</b><b style="font-size:20px;color:${b>=0?'#c43a3a':'#3a8c50'}">${money(Math.abs(b))}</b></div></div>
@@ -171,7 +170,7 @@
 
   window.kbAddEntry=function(type,eid,kind){
     const list=type==='customer'?kb.customers:kb.suppliers,x=list.find(z=>z.id===eid);if(!x)return;const green=(type==='supplier'&&kind==='purchase')||(type==='customer'&&kind==='got');
-    shell(type,`<div style="padding:16px"><div style="font-size:21px;font-weight:900;text-align:center;color:${green?'#378a50':'#c13a3a'}">${type==='customer'?(kind==='gave'?'You Gave':'You Got'):(kind==='purchase'?'Purchase from':'Payment to')} ${escK(x.name)}</div>
+    shell(type,`<div style="padding:16px"><div style="font-size:21px;font-weight:900;text-align:center;color:${green?'#378a50':'#c13a3a'}">${type==='customer'?(kind==='gave'?tx('youGave'):tx('youGot')):(kind==='purchase'?'Purchase from':'Payment to')} ${escK(x.name)}</div>
       <div style="background:#fff;border-radius:15px;padding:16px;margin-top:18px"><input id="keAmount" type="number" inputmode="decimal" placeholder="₹ 0" style="width:100%;font-size:28px;font-weight:850;padding:14px;border:1px solid #ddd;border-radius:12px">
       <textarea id="keNote" placeholder="Details / note" style="width:100%;min-height:90px;margin-top:12px;padding:13px;border:1px solid #ddd;border-radius:12px"></textarea>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px"><input id="keDate" type="date" value="${new Date().toISOString().slice(0,10)}" style="padding:13px;border:1px solid #ddd;border-radius:12px"><label style="padding:13px;border:1px solid #ddd;border-radius:12px;text-align:center">📷 Attach bill<input id="kePhoto" type="file" accept="image/*" capture="environment" style="display:none"></label></div>
