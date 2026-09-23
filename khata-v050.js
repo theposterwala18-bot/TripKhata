@@ -11,7 +11,7 @@
   function entityBal(x,type){
     let b=0;
     (x.entries||[]).forEach(e=>{
-      if(type==='customer') b += e.kind==='got'?Number(e.amount):-Number(e.amount);
+      if(type==='customer') b += e.kind==='gave'?Number(e.amount):-Number(e.amount);
       else b += e.kind==='purchase'?Number(e.amount):-Number(e.amount);
     });
     return Math.round(b*100)/100;
@@ -101,20 +101,20 @@
       <div style="background:#fff;border-radius:18px;padding:15px;display:flex;gap:12px;align-items:center"><div style="width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:#1480ee;color:white;font-size:21px">${escK(x.name.split(/\s+/).map(a=>a[0]).join('').slice(0,2).toUpperCase())}</div><div style="flex:1"><div style="font-size:20px;font-weight:850">${escK(x.name)}</div><div style="color:#777">${escK(x.phone||'No phone')}</div></div><button onclick="kbEditEntity('${type}',${eid})" style="border:0;background:#f0f5fb;border-radius:11px;padding:10px">⋮</button></div>
       <div style="background:#fff;border-radius:18px;margin-top:12px;padding:17px"><div style="display:flex;justify-content:space-between"><b>${isC?(b>=0?'You will get':'You will give'):(b>=0?'You will give':'Advance paid')}</b><b style="font-size:20px;color:${b>=0?'#c43a3a':'#3a8c50'}">${money(Math.abs(b))}</b></div></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0"><button onclick="kbEntityReport('${type}',${eid})" style="padding:12px;border:0;background:#fff;border-radius:13px;color:#1558b0">📄 Report</button><button onclick="kbShareEntity('${type}',${eid})" style="padding:12px;border:0;background:#fff;border-radius:13px;color:#1558b0">↗ Share</button><button onclick="kbCall(${JSON.stringify(x.phone||'')})" style="padding:12px;border:0;background:#fff;border-radius:13px;color:#1558b0">☎ Call</button></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;font-size:12px;color:#999;padding:7px 10px"><div>ENTRIES</div><div style="text-align:center">${isC?'YOU GAVE':'PURCHASE'}</div><div style="text-align:right">${isC?'YOU GOT':'PAYMENT'}</div></div>
+      ${isC?`<div style="background:#eef5ff;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:12px;color:#456"><b>You Gave</b> = customer owes you • <b>You Got</b> = customer paid you</div>`:''}<div style="display:grid;grid-template-columns:1fr 1fr 1fr;font-size:12px;color:#999;padding:7px 10px"><div>ENTRIES</div><div style="text-align:center">${isC?'YOU GAVE':'PURCHASE'}</div><div style="text-align:right">${isC?'YOU GOT':'PAYMENT'}</div></div>
       <div>${renderEntries(type,x)}</div>
       <div style="position:fixed;left:0;right:0;bottom:0;background:white;padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;box-shadow:0 -6px 20px rgba(0,0,0,.08)">
-        <button onclick="kbAddEntry('${type}',${eid},'${isC?'gave':'purchase'}')" style="padding:15px;border:0;border-radius:13px;background:${isC?'#c73732':'#078d49'};color:white;font-weight:900">${isC?'YOU GAVE ₹':'PURCHASE'}</button>
-        <button onclick="kbAddEntry('${type}',${eid},'${isC?'got':'payment'}')" style="padding:15px;border:0;border-radius:13px;background:${isC?'#078d49':'#c73732'};color:white;font-weight:900">${isC?'YOU GOT ₹':'PAYMENT'}</button>
+        <button onclick="kbAddEntry('${type}',${eid},'${isC?'gave':'purchase'}')" style="padding:15px;border:0;border-radius:13px;background:${isC?'#c73732':'#078d49'};color:white;font-weight:900">${isC?'YOU GAVE ₹<div style="font-size:10px;font-weight:600;opacity:.9">Customer owes you</div>':'PURCHASE'}</button>
+        <button onclick="kbAddEntry('${type}',${eid},'${isC?'got':'payment'}')" style="padding:15px;border:0;border-radius:13px;background:${isC?'#078d49':'#c73732'};color:white;font-weight:900">${isC?'YOU GOT ₹<div style="font-size:10px;font-weight:600;opacity:.9">Customer paid you</div>':'PAYMENT'}</button>
       </div>
     </div>`);
   };
   function renderEntries(type,x){
     if(!(x.entries||[]).length)return'<div style="padding:50px 10px;text-align:center;color:#888">No entries yet.</div>';
     let running=0;return [...x.entries].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(e=>{
-      const isC=type==='customer';if(isC)running+=e.kind==='got'?Number(e.amount):-Number(e.amount);else running+=e.kind==='purchase'?Number(e.amount):-Number(e.amount);
+      const isC=type==='customer';if(isC)running+=e.kind==='gave'?Number(e.amount):-Number(e.amount);else running+=e.kind==='purchase'?Number(e.amount):-Number(e.amount);
       const left=(isC&&e.kind==='gave')||(!isC&&e.kind==='purchase'),right=!left;
-      return `<div onclick="kbEntryDetails('${type}',${x.id},${e.id})" style="background:#fff;border-radius:12px;margin-bottom:10px;padding:13px;display:grid;grid-template-columns:1.5fr .75fr .75fr;align-items:center"><div><div style="color:#999;font-size:12px">${fmtDate(e.date)}</div><div style="font-weight:700;margin-top:5px">${escK(e.note||'')}</div></div><div style="text-align:center;color:${left?'#2d8c49':'#c33'};font-weight:850">${left?money(e.amount):''}</div><div style="text-align:right;color:${right?'#c33':'#2d8c49'};font-weight:850">${right?money(e.amount):''}</div></div>`;
+      return `<div onclick="kbEntryDetails('${type}',${x.id},${e.id})" style="background:#fff;border-radius:12px;margin-bottom:10px;padding:13px;display:grid;grid-template-columns:1.5fr .75fr .75fr;align-items:center"><div><div style="color:#999;font-size:12px">${fmtDate(e.date)}</div><div style="font-weight:700;margin-top:5px">${escK(e.note||'')}</div></div><div style="text-align:center;color:${isC?'#c33':'#2d8c49'};font-weight:850">${left?money(e.amount):''}</div><div style="text-align:right;color:${isC?'#2d8c49':'#c33'};font-weight:850">${right?money(e.amount):''}</div></div>`;
     }).join('');
   }
   window.kbCall=function(phone){if(phone)location.href='tel:'+phone;else alert('Phone number not added.')};
