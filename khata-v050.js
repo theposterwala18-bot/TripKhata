@@ -135,8 +135,29 @@
 
   window.kbEntryDetails=function(type,eid,enid){
     const list=type==='customer'?kb.customers:kb.suppliers,x=list.find(z=>z.id===eid),e=x?.entries.find(z=>z.id===enid);if(!e)return;
-    shell(type,`<div style="padding:16px"><div style="background:#fff;border-radius:18px;padding:18px"><div style="font-size:20px;font-weight:900">Entry Details</div><div style="display:flex;justify-content:space-between;margin-top:18px"><b>${escK(x.name)}</b><b>${money(e.amount)}</b></div><div style="color:#888;margin-top:6px">${fmtDate(e.date)}</div><hr style="border:0;border-top:1px solid #eee;margin:18px 0"><div style="color:#888">Details</div><div style="font-size:18px;margin-top:6px">${escK(e.note||'No details')}</div>${e.photo?`<img src="${e.photo}" style="max-width:100%;border-radius:12px;margin-top:14px">`:''}<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px"><button onclick="kbDeleteEntry('${type}',${eid},${enid})" style="padding:13px;border:1px solid #d33;border-radius:12px;background:#fff;color:#d33">Delete</button><button onclick="kbShareEntity('${type}',${eid})" style="padding:13px;border:0;border-radius:12px;background:#1558b0;color:#fff">Share</button></div></div></div>`);
+    shell(type,`<div style="padding:16px"><div style="background:#fff;border-radius:18px;padding:18px"><div style="font-size:20px;font-weight:900">Entry Details</div><div style="display:flex;justify-content:space-between;margin-top:18px"><b>${escK(x.name)}</b><b>${money(e.amount)}</b></div><div style="color:#888;margin-top:6px">${fmtDate(e.date)}</div><hr style="border:0;border-top:1px solid #eee;margin:18px 0"><div style="color:#888">Details</div><div style="font-size:18px;margin-top:6px">${escK(e.note||'No details')}</div>${e.photo?`<img src="${e.photo}" style="max-width:100%;border-radius:12px;margin-top:14px">`:''}<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:20px"><button onclick="kbDeleteEntry('${type}',${eid},${enid})" style="padding:13px;border:1px solid #d33;border-radius:12px;background:#fff;color:#d33">Delete</button><button onclick="kbEditEntry('${type}',${eid},${enid})" style="padding:13px;border:1px solid #1558b0;border-radius:12px;background:#eef5ff;color:#1558b0">Edit</button><button onclick="kbShareEntity('${type}',${eid})" style="padding:13px;border:0;border-radius:12px;background:#1558b0;color:#fff">Share</button></div></div></div>`);
   };
+  window.kbEditEntry=function(type,eid,enid){
+    const list=type==='customer'?kb.customers:kb.suppliers,x=list.find(z=>z.id===eid),e=x?.entries.find(z=>z.id===enid);if(!e)return;
+    const isC=type==='customer';
+    shell(type,`<div style="padding:16px"><div style="background:#fff;border-radius:18px;padding:18px"><div style="font-size:20px;font-weight:900">Edit Entry</div>
+      <div style="margin-top:14px;color:#777">Type</div>
+      <select id="keEditKind" style="width:100%;padding:13px;border:1px solid #ddd;border-radius:12px">
+        ${isC?`<option value="gave" ${e.kind==='gave'?'selected':''}>You Gave — Customer owes you</option><option value="got" ${e.kind==='got'?'selected':''}>You Got — Customer paid you</option>`:`<option value="purchase" ${e.kind==='purchase'?'selected':''}>Purchase</option><option value="payment" ${e.kind==='payment'?'selected':''}>Payment</option>`}
+      </select>
+      <div style="margin-top:12px;color:#777">Amount</div><input id="keEditAmount" type="number" inputmode="decimal" value="${e.amount}" style="width:100%;box-sizing:border-box;padding:13px;border:1px solid #ddd;border-radius:12px">
+      <div style="margin-top:12px;color:#777">Details</div><textarea id="keEditNote" style="width:100%;box-sizing:border-box;min-height:90px;padding:13px;border:1px solid #ddd;border-radius:12px">${escK(e.note||'')}</textarea>
+      <div style="margin-top:12px;color:#777">Date</div><input id="keEditDate" type="date" value="${new Date(e.date).toISOString().slice(0,10)}" style="width:100%;box-sizing:border-box;padding:13px;border:1px solid #ddd;border-radius:12px">
+      <button onclick="kbSaveEditedEntry('${type}',${eid},${enid})" style="width:100%;margin-top:16px;padding:14px;border:0;border-radius:12px;background:#1558b0;color:#fff;font-weight:850">Save Changes</button>
+    </div></div>`);
+  };
+  window.kbSaveEditedEntry=function(type,eid,enid){
+    const list=type==='customer'?kb.customers:kb.suppliers,x=list.find(z=>z.id===eid),e=x?.entries.find(z=>z.id===enid);if(!e)return;
+    const a=Number(keEditAmount.value);if(!a)return alert('Valid amount enter karo.');
+    e.kind=keEditKind.value;e.amount=+a.toFixed(2);e.note=keEditNote.value.trim();e.date=new Date(keEditDate.value||Date.now()).toISOString();
+    ksave();kbEntryDetails(type,eid,enid);
+  };
+
   window.kbDeleteEntry=function(type,eid,enid){if(!confirm('Delete this entry?'))return;const list=type==='customer'?kb.customers:kb.suppliers,x=list.find(z=>z.id===eid);x.entries=x.entries.filter(e=>e.id!==enid);ksave();kbOpenLedger(type,eid)};
 
   function reportText(type,x){
