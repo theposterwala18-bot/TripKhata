@@ -12,7 +12,7 @@
   function isPa(){return kb.profile?.lang==='pa'}
   function tx(k){
     const pa={
-      customerKhata:'ਕਸਟਮਰ ਖਾਤਾ',suppliers:'ਸਪਲਾਇਰ',youWillGive:'ਤੁਹਾਨੂੰ ਦੇਣੇ ਹਨ',youWillGet:'ਤੁਹਾਨੂੰ ਲੈਣੇ ਹਨ',
+      customerKhata:'ਕਸਟਮਰ ਖਾਤਾ',suppliers:'ਸਪਲਾਇਰ',youWillGive:'ਬਕਾਇਆ ਦੇਣਾ',youWillGet:'ਬਕਾਇਆ ਲੈਣਾ',
       report:'ਰਿਪੋਰਟ',share:'ਸ਼ੇਅਰ',call:'ਕਾਲ',entries:'ਐਂਟਰੀਆਂ',youGave:'ਤੁਸੀਂ ਦਿੱਤੇ',youGot:'ਤੁਸੀਂ ਪ੍ਰਾਪਤ ਕੀਤੇ',
       owes:'ਗਾਹਕ ਨੇ ਤੁਹਾਨੂੰ ਦੇਣੇ ਹਨ',paid:'ਗਾਹਕ ਨੇ ਤੁਹਾਨੂੰ ਭੁਗਤਾਨ ਕੀਤਾ',totalDebit:'ਕੁੱਲ ਡੈਬਿਟ',totalCredit:'ਕੁੱਲ ਕ੍ਰੈਡਿਟ',
       netBalance:'ਕੁੱਲ ਬਕਾਇਆ',addCustomer:'ਕਸਟਮਰ ਜੋੜੋ',searchCustomer:'ਕਸਟਮਰ ਖੋਜੋ',entryDetails:'ਐਂਟਰੀ ਵੇਰਵਾ',
@@ -62,6 +62,14 @@
     });
     return Math.round(b*100)/100;
   }
+  function customerTransactionTotals(){
+    let gave=0,got=0;
+    (kb.customers||[]).forEach(x=>(x.entries||[]).forEach(e=>{
+      if(e.kind==='gave')gave+=Number(e.amount)||0;
+      else if(e.kind==='got')got+=Number(e.amount)||0;
+    }));
+    return {gave:Math.round(gave*100)/100,got:Math.round(got*100)/100};
+  }
   function totals(type){
     const list=type==='customer'?kb.customers:kb.suppliers;
     if(type==='customer'){
@@ -100,10 +108,10 @@
 
   window.kbOpenMain=function(type='customer'){
     window.kbLangReturn=()=>kbOpenMain(type);
-    const list=type==='customer'?kb.customers:kb.suppliers,t=totals(type),isC=type==='customer';
+    const list=type==='customer'?kb.customers:kb.suppliers,t=totals(type),isC=type==='customer',ct=isC?customerTransactionTotals():null;
     shell(type,`<div style="padding:14px 14px 90px">
       <div style="background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.08)">
-        ${isC?`<div style="display:grid;grid-template-columns:1fr 1fr;padding:18px 10px;text-align:center"><div style="border-right:1px solid #eee"><div style="color:#777">${tx('youWillGive')}</div><div style="font-size:23px;font-weight:850;color:#34834b;margin-top:4px">${money(t.b)}</div></div><div><div style="color:#777">${tx('youWillGet')}</div><div style="font-size:23px;font-weight:850;color:#c13a3a;margin-top:4px">${money(t.a)}</div></div></div>`
+        ${isC?`<div style="display:grid;grid-template-columns:1fr 1fr;padding:18px 10px;text-align:center"><div style="border-right:1px solid #eee"><div style="color:#777">${tx('youGave')}</div><div style="font-size:23px;font-weight:850;color:#c13a3a;margin-top:4px">${money(ct.gave)}</div></div><div><div style="color:#777">${tx('youGot')}</div><div style="font-size:23px;font-weight:850;color:#34834b;margin-top:4px">${money(ct.got)}</div></div></div>`
         :`<div style="padding:20px"><div style="font-size:16px">Total purchase / payable</div><div style="font-size:28px;font-weight:900;margin-top:7px">${money(t.a)}</div></div>`}
         <div style="display:grid;grid-template-columns:1fr 1fr;background:#f6f7f9"><button onclick="kbGlobalReport('${type}')" style="padding:15px;border:0;background:transparent;color:#1558b0;font-weight:800">📄 ${isPa()?'ਰਿਪੋਰਟ':'VIEW REPORT'}</button><button onclick="kbShareGlobal('${type}')" style="padding:15px;border:0;background:transparent;color:#1558b0;font-weight:800">↗ ${isPa()?'ਸ਼ੇਅਰ':'SHARE'}</button></div>
       </div>
