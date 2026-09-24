@@ -267,5 +267,5 @@
     const set=document.getElementById('page-settings');if(set&&!document.getElementById('kbSettingsCard')){const c=document.createElement('div');c.id='kbSettingsCard';c.className='card';c.innerHTML='<div class="cardtitle">Khata Book Modules</div><div class="muted small" style="margin-top:3px">Independent from TripKhata</div><div class="grid2" style="margin-top:12px"><button class="btn primary" onclick="kbOpenMain(\'customer\')">👥 Customers</button><button class="btn soft" onclick="kbOpenMain(\'supplier\')">📦 Suppliers</button></div>';set.appendChild(c)}
   }
   const oldSettings=window.renderSettings;window.renderSettings=function(){oldSettings();setTimeout(addLauncher,0)};
-  setInterval(addLauncher,1000);setTimeout(addLauncher,200);
+  setTimeout(addLauncher,200);
 })();
