@@ -41,7 +41,7 @@ function balance(d,pid){return d.entries.filter(function(e){return e.partyId===p
 function host(){var h=q('#kbHost');if(!h){h=document.createElement('div');h.id='kbHost';document.body.appendChild(h)}return h}
 function shell(title,html,back){host().innerHTML='<div class="s70app"><div class="s70head"><button id="s70back">←</button><b>'+esc(title)+'</b></div>'+html+'</div>';q('#s70back').onclick=back||function(){window.closeKhataBook&&window.closeKhataBook()}}
 function setup(){
- shell('Suppliers / Business Ledger','<main class="s70pad"><section class="s70card s70center"><div class="s70shop">🏪</div><h2>Add your business / farm</h2><p>Supplier accounts will stay separate for each business. You can add more businesses later.</p><button class="s70primary" id="s70create">+ Create Business</button></section></main>');
+ shell('Suppliers / Business Ledger','<main class="s70pad"><section class="s70card s70center"><div class="s70shop">🏪</div><h2>Add your Business / Shop / Farm / Company name</h2><p>Supplier accounts will stay separate for each business. You can add more businesses later.</p><button class="s70primary" id="s70create">+ Create Business / Shop / Farm / Company</button></section></main>');
  q('#s70create').onclick=function(){businessForm()};
 }
 function home(){
@@ -50,7 +50,7 @@ function home(){
  var purchase=0,sale=0,paid=0,received=0;d.entries.filter(function(e){return e.businessId===b.id}).forEach(function(e){if(e.type==='purchase')purchase+=e.amount;if(e.type==='sale')sale+=e.amount;if(e.type==='payment_made')paid+=e.amount;if(e.type==='payment_received')received+=e.amount});
  var pay=0,get=0;ps.forEach(function(p){var z=balance(d,p.id);if(z>0)pay+=z;if(z<0)get+=-z});
  var opts=d.businesses.map(function(v){return '<option value="'+v.id+'" '+(v.id===b.id?'selected':'')+'>'+esc(v.name)+'</option>'}).join('');
- shell('Suppliers / Business Ledger','<main class="s70pad"><section class="s70biz"><div><small>Business / Farm</small><select id="s70biz">'+opts+'</select></div><button id="s70manage">Manage</button></section>'+
+ shell('Suppliers / Business Ledger','<main class="s70pad"><section class="s70biz"><div><small>Business / Shop / Farm / Company</small><select id="s70biz">'+opts+'</select></div><button id="s70manage">Manage</button></section>'+
  (b.name==='My Business (Imported)'?'<div class="s70note">Old supplier data imported safely. Rename this business from Manage.</div>':'')+
  '<section class="s70sum"><div><small>Purchase</small><b>'+money(purchase)+'</b></div><div><small>Sale</small><b>'+money(sale)+'</b></div><div><small>To Pay</small><b class="red">'+money(pay)+'</b></div><div><small>To Receive</small><b class="green">'+money(get)+'</b></div></section>'+
  '<div class="s70tools s70tools3"><button id="s70items">📦 Items</button><button id="s70report">📄 Reports</button><button id="s70reminders">🔔 Reminders</button></div>'+
@@ -69,12 +69,12 @@ function home(){
 }
 function businesses(){
  var d=db().d,rows=d.businesses.map(function(b){return '<div class="s70row"><div><b>'+esc(b.name)+'</b><small>'+esc(b.phone||'')+' '+esc(b.address||'')+'</small></div><button data-be="'+b.id+'">Edit</button></div>'}).join('');
- shell('Businesses / Farms','<main class="s70pad"><button class="s70primary" id="s70newb">+ Add Business / Farm</button><div class="s70rows">'+rows+'</div></main>',home);
+ shell('Businesses / Farms','<main class="s70pad"><button class="s70primary" id="s70newb">+ Add Business / Shop / Farm / Company</button><div class="s70rows">'+rows+'</div></main>',home);
  q('#s70newb').onclick=function(){businessForm()};document.querySelectorAll('[data-be]').forEach(function(e){e.onclick=function(){businessForm(Number(e.dataset.be))}});
 }
 function businessForm(id){
  var d=db().d,b=d.businesses.find(function(x){return x.id===id})||{};
- shell(id?'Edit Business':'Add Business / Farm','<main class="s70pad"><section class="s70card s70form"><label>Business / Farm Name<input id="s70bn" value="'+esc(b.name||'')+'" placeholder="Mr Dhaliwal Creation"></label><label>Mobile<input id="s70bp" value="'+esc(b.phone||'')+'" inputmode="tel"></label><label>Address<textarea id="s70ba">'+esc(b.address||'')+'</textarea></label><button class="s70primary" id="s70saveb">Save Business</button></section></main>',id?businesses:home);
+ shell(id?'Edit Business':'Add Business / Shop / Farm / Company','<main class="s70pad"><section class="s70card s70form"><label>Business / Shop / Farm / Company Name<input id="s70bn" value="'+esc(b.name||'')+'" placeholder="Mr Dhaliwal Creation"></label><label>Mobile<input id="s70bp" value="'+esc(b.phone||'')+'" inputmode="tel"></label><label>Address<textarea id="s70ba">'+esc(b.address||'')+'</textarea></label><button class="s70primary" id="s70saveb">Save Business</button></section></main>',id?businesses:home);
  q('#s70saveb').onclick=function(){var n=q('#s70bn').value.trim();if(!n)return alert('Business name required.');change(function(z){if(id){Object.assign(z.businesses.find(function(a){return a.id===id}),{name:n,phone:q('#s70bp').value.trim(),address:q('#s70ba').value.trim()})}else{var nb={id:nid(),name:n,phone:q('#s70bp').value.trim(),address:q('#s70ba').value.trim(),createdAt:new Date().toISOString()};z.businesses.push(nb);z.activeBusinessId=nb.id}});home()};
 }
 function partyForm(bid){
@@ -131,12 +131,26 @@ function entry(pid,type,eid){
       '<b class="s70rowtotal">'+money((Number(r.qty)||0)*(Number(r.rate)||0))+'</b><button data-rm="'+i+'">×</button></div>';
   }).join('');
   q('#s70total').textContent=money(rows.reduce(function(s,r){return s+(Number(r.qty)||0)*(Number(r.rate)||0)},0));
-  document.querySelectorAll('[data-k]').forEach(function(el){el.onchange=el.oninput=function(){
-    var i=Number(el.dataset.i),k=el.dataset.k;
-    if(k==='item'){var it=its.find(function(x){return x.id===Number(el.value)});rows[i].itemId=Number(el.value)||null;rows[i].name=it?it.name:'';if(!rows[i].rate&&it&&it.rate)rows[i].rate=it.rate}
-    else rows[i][k]=Number(el.value)||0;
-    drawRows();
-  }});
+  document.querySelectorAll('[data-k]').forEach(function(el){
+    var k=el.dataset.k;
+    if(k==='item'){
+      el.onchange=function(){
+        var i=Number(el.dataset.i),it=its.find(function(x){return x.id===Number(el.value)});
+        rows[i].itemId=Number(el.value)||null;rows[i].name=it?it.name:'';
+        if(!rows[i].rate&&it&&it.rate)rows[i].rate=it.rate;
+        drawRows();
+      };
+    }else{
+      el.oninput=function(){
+        var i=Number(el.dataset.i);
+        rows[i][k]=Number(el.value)||0;
+        var row=el.closest('.s70itemrow'),rt=row&&row.querySelector('.s70rowtotal');
+        if(rt)rt.textContent=money((Number(rows[i].qty)||0)*(Number(rows[i].rate)||0));
+        var total=q('#s70total');
+        if(total)total.textContent=money(rows.reduce(function(s,r){return s+(Number(r.qty)||0)*(Number(r.rate)||0)},0));
+      };
+    }
+  });
   document.querySelectorAll('[data-rm]').forEach(function(el){el.onclick=function(){rows.splice(Number(el.dataset.rm),1);drawRows()}});
  }
  q('#s70addrow').onclick=function(){rows.push({itemId:null,name:'',qty:1,rate:0});drawRows()};
