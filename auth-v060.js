@@ -47,7 +47,7 @@
 
   window.tripKhataAccount=function(){const u=window.TK_AUTH?.currentUser;if(!u)return show('login');if(confirm((u.displayName||'')+'\n'+(u.email||'')+'\n\nSign out?')){try{if(typeof state!=='undefined'){state.cloud={enabled:false,provider:null};if(state.user){state.user.loggedIn=false;delete state.user.firebaseUid;delete state.user.provider}if(typeof save==='function')save()}}catch(e){}TK_AUTH.signOut()}};
   async function init(){
-    try{await sdk();if(!window.TRIPKHATA_FIREBASE_CONFIG)return;firebase.initializeApp(window.TRIPKHATA_FIREBASE_CONFIG);window.TK_AUTH=firebase.auth();TK_AUTH.onAuthStateChanged(u=>{document.getElementById('tkAuthOverlay')?.remove();if(u)bindFirebaseUser(u);badge();if(u&&window.tripKhataSyncStart)window.tripKhataSyncStart(u);if(!u&&!sessionStorage.getItem('tk_offline'))show('login')});setInterval(badge,1500)}catch(e){console.error('Firebase auth init',e)}
+    try{await sdk();if(!window.TRIPKHATA_FIREBASE_CONFIG)return;firebase.initializeApp(window.TRIPKHATA_FIREBASE_CONFIG);window.TK_AUTH=firebase.auth();TK_AUTH.onAuthStateChanged(u=>{document.getElementById('tkAuthOverlay')?.remove();if(u)bindFirebaseUser(u);badge();if(u&&window.tripKhataSyncStart)window.tripKhataSyncStart(u);if(!u&&!sessionStorage.getItem('tk_offline'))show('login')});}catch(e){console.error('Firebase auth init',e)}
   }
   setTimeout(init,500);
 })();
