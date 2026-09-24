@@ -88,7 +88,6 @@ if(!top) return;
     setTimeout(()=>{ensureServiceBar();cleanupOldLauncher();setActiveService('trip')},0);
   };
 
-  setInterval(()=>{ensureServiceBar();cleanupOldLauncher()},1000);
 
   const s=document.createElement('style');
   s.textContent=`
