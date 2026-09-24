@@ -102,7 +102,7 @@
 
   function shell(type,inner){
     const isC=type==='customer';
-    host().innerHTML=`<div style="position:fixed;inset:0;z-index:500;background:#f3f6f9;overflow:auto;font-family:Inter,system-ui,-apple-system,sans-serif">
+    host().innerHTML=`<div class="kb50overlay" style="position:fixed;inset:0;z-index:500;background:#dfe6ef;overflow:auto;font-family:Inter,system-ui,-apple-system,sans-serif"><div class="kb50phone" style="width:min(620px,100%);min-height:100vh;margin:0 auto;background:#f3f6f9;box-shadow:0 0 30px rgba(20,45,75,.12)">
       <div style="position:sticky;top:0;z-index:5;background:#1558b0;color:#fff;padding:18px 16px 14px">
         <div style="display:flex;align-items:center;gap:10px">
           <button onclick="closeKhataBook()" style="border:0;background:transparent;color:#fff;font-size:28px">←</button>
@@ -110,7 +110,7 @@
             <div style="font-size:20px;font-weight:850">${isC?tx('customerKhata'):tx('suppliers')}</div>
           </div><button onclick="kbToggleLang()" style="border:1px solid #ffffff66;background:#ffffff18;color:#fff;border-radius:10px;padding:7px 9px;font-size:12px;font-weight:800">${isPa()?'EN':'ਪੰ'}</button>
         </div>
-      </div>${inner}</div>`;
+      </div>${inner}</div></div>`;
   }
 
   window.kbOpenMain=function(type='customer'){
@@ -231,6 +231,7 @@
   }
   window.kbShareEntity=function(type,eid){const x=(type==='customer'?kb.customers:kb.suppliers).find(z=>z.id===eid),text=reportText(type,x);if(navigator.share)navigator.share({title:x.name+' Khata',text}).catch(()=>{});else{navigator.clipboard?.writeText(text);alert('Report copied')}}
   window.kbEntityReport=function(type,eid){
+    if(type==='customer'&&typeof window.openCustomerStatementV2==='function')return window.openCustomerStatementV2(eid);
     const x=(type==='customer'?kb.customers:kb.suppliers).find(z=>z.id===eid),b=entityBal(x,type),w=window.open('','_blank');w.document.write(`<!doctype html><title>${escK(x.name)} Khata</title><style>body{font-family:Arial;max-width:800px;margin:30px auto;padding:0 20px}table{width:100%;border-collapse:collapse}td,th{padding:9px;border-bottom:1px solid #ddd;text-align:left}@media print{button{display:none}}</style><h1>${escK(x.name)} Khata Report</h1><p>${escK(x.phone||'')}</p><h2>Balance: ${money(Math.abs(b))}</h2><table><tr><th>Date</th><th>Details</th><th>Type</th><th>Amount</th></tr>${(x.entries||[]).map(e=>`<tr><td>${fmtDate(e.date)}</td><td>${escK(e.note||'')}</td><td>${escK(e.kind)}</td><td>${money(e.amount)}</td></tr>`).join('')}</table><button onclick="print()">Print / Save PDF</button>`);w.document.close();
   };
   window.kbGlobalReport=function(type){
@@ -274,5 +275,10 @@
     const set=document.getElementById('page-settings');if(set&&!document.getElementById('kbSettingsCard')){const c=document.createElement('div');c.id='kbSettingsCard';c.className='card';c.innerHTML='<div class="cardtitle">Khata Book Modules</div><div class="muted small" style="margin-top:3px">Independent from TripKhata</div><div class="grid2" style="margin-top:12px"><button class="btn primary" onclick="kbOpenMain(\'customer\')">👥 Customers</button><button class="btn soft" onclick="kbOpenMain(\'supplier\')">📦 Suppliers</button></div>';set.appendChild(c)}
   }
   const oldSettings=window.renderSettings;window.renderSettings=function(){oldSettings();setTimeout(addLauncher,0)};
-  setTimeout(addLauncher,200);
+  const kb50mobilecss=document.createElement('style');kb50mobilecss.id='kb50mobilecss';kb50mobilecss.textContent=`
+ .kb50phone{position:relative}
+ @media(max-width:680px){.kb50overlay{background:#f3f6f9!important}.kb50phone{width:100%!important;box-shadow:none!important}}
+ @media(min-width:681px){.kb50phone{border-left:1px solid #d9e1eb;border-right:1px solid #d9e1eb}}
+ `;document.head.appendChild(kb50mobilecss);
+ setTimeout(addLauncher,200);
 })();
