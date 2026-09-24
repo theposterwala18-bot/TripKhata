@@ -129,5 +129,4 @@
     }catch(e){console.error(e);status('error');badge()}
   };
   window.addEventListener('online',()=>{badge();push(false).catch(()=>{})});window.addEventListener('offline',()=>{status('offline');badge()});
-  setInterval(badge,2000);
-})();
+  })();
