@@ -17,7 +17,7 @@
       owes:'ਗਾਹਕ ਨੇ ਤੁਹਾਨੂੰ ਦੇਣੇ ਹਨ',paid:'ਗਾਹਕ ਨੇ ਤੁਹਾਨੂੰ ਭੁਗਤਾਨ ਕੀਤਾ',totalDebit:'ਕੁੱਲ ਡੈਬਿਟ',totalCredit:'ਕੁੱਲ ਕ੍ਰੈਡਿਟ',
       netBalance:'ਕੁੱਲ ਬਕਾਇਆ',addCustomer:'ਕਸਟਮਰ ਜੋੜੋ',searchCustomer:'ਕਸਟਮਰ ਖੋਜੋ',entryDetails:'ਐਂਟਰੀ ਵੇਰਵਾ',
       details:'ਵੇਰਵਾ',delete:'ਡਿਲੀਟ',edit:'ਸੋਧੋ',saveChanges:'ਬਦਲਾਅ ਸੇਵ ਕਰੋ',type:'ਕਿਸਮ',amount:'ਰਕਮ',date:'ਤਾਰੀਖ',
-      customerOwes:'ਗਾਹਕ ਨੇ ਤੁਹਾਨੂੰ ਦੇਣੇ ਹਨ',customerPaid:'ਗਾਹਕ ਨੇ ਤੁਹਾਨੂੰ ਭੁਗਤਾਨ ਕੀਤਾ',language:'ਭਾਸ਼ਾ'
+      customerOwes:'ਗਾਹਕ ਨੇ ਤੁਹਾਨੂੰ ਦੇਣੇ ਹਨ',customerPaid:'ਗਾਹਕ ਨੇ ਤੁਹਾਨੂੰ ਭੁਗਤਾਨ ਕੀਤਾ',purchase:'ਖਰੀਦ',payment:'ਭੁਗਤਾਨ',totalPurchase:'ਕੁੱਲ ਖਰੀਦ',totalPayment:'ਕੁੱਲ ਭੁਗਤਾਨ',netPayable:'ਕੁੱਲ ਦੇਣਾ',advancePaid:'ਐਡਵਾਂਸ ਦਿੱਤਾ',searchSupplier:'ਸਪਲਾਇਰ ਖੋਜੋ',addSupplier:'ਸਪਲਾਇਰ ਜੋੜੋ',language:'ਭਾਸ਼ਾ'
     };
     const en={
       customerKhata:'Customer Khata',suppliers:'Suppliers',youWillGive:'You will give',youWillGet:'You will get',
@@ -25,7 +25,7 @@
       owes:'Customer owes you',paid:'Customer paid you',totalDebit:'Total Debit',totalCredit:'Total Credit',
       netBalance:'Net Balance',addCustomer:'Add Customer',searchCustomer:'Search Customer',entryDetails:'Entry Details',
       details:'Details',delete:'Delete',edit:'Edit',saveChanges:'Save Changes',type:'Type',amount:'Amount',date:'Date',
-      customerOwes:'Customer owes you',customerPaid:'Customer paid you',language:'Language'
+      customerOwes:'Customer owes you',customerPaid:'Customer paid you',purchase:'Purchase',payment:'Payment',totalPurchase:'Total Purchase',totalPayment:'Total Payment',netPayable:'Net Payable',advancePaid:'Advance Paid',searchSupplier:'Search Supplier',addSupplier:'Add Supplier',language:'Language'
     };
     return (isPa()?pa:en)[k]||k;
   }
@@ -70,6 +70,14 @@
     }));
     return {gave:Math.round(gave*100)/100,got:Math.round(got*100)/100};
   }
+  function supplierEntryTotals(x){
+    let purchase=0,payment=0;(x.entries||[]).forEach(e=>{if(e.kind==='purchase')purchase+=Number(e.amount)||0;else if(e.kind==='payment')payment+=Number(e.amount)||0});
+    return {purchase:Math.round(purchase*100)/100,payment:Math.round(payment*100)/100,balance:Math.round((purchase-payment)*100)/100};
+  }
+  function supplierTransactionTotals(){
+    let purchase=0,payment=0;(kb.suppliers||[]).forEach(x=>(x.entries||[]).forEach(e=>{if(e.kind==='purchase')purchase+=Number(e.amount)||0;else if(e.kind==='payment')payment+=Number(e.amount)||0}));
+    return {purchase:Math.round(purchase*100)/100,payment:Math.round(payment*100)/100,balance:Math.round((purchase-payment)*100)/100};
+  }
   function totals(type){
     const list=type==='customer'?kb.customers:kb.suppliers;
     if(type==='customer'){
@@ -100,7 +108,6 @@
           <button onclick="closeKhataBook()" style="border:0;background:transparent;color:#fff;font-size:28px">←</button>
           <div style="flex:1">
             <div style="font-size:20px;font-weight:850">${isC?tx('customerKhata'):tx('suppliers')}</div>
-            <div style="font-size:11px;opacity:.85">${escK(kb.profile.name||'My Khata')} • v${KBV}</div>
           </div><button onclick="kbToggleLang()" style="border:1px solid #ffffff66;background:#ffffff18;color:#fff;border-radius:10px;padding:7px 9px;font-size:12px;font-weight:800">${isPa()?'EN':'ਪੰ'}</button>
         </div>
       </div>${inner}</div>`;
@@ -108,23 +115,23 @@
 
   window.kbOpenMain=function(type='customer'){
     window.kbLangReturn=()=>kbOpenMain(type);
-    const list=type==='customer'?kb.customers:kb.suppliers,t=totals(type),isC=type==='customer',ct=isC?customerTransactionTotals():null;
+    const list=type==='customer'?kb.customers:kb.suppliers,t=totals(type),isC=type==='customer',ct=isC?customerTransactionTotals():null,st=!isC?supplierTransactionTotals():null;
     shell(type,`<div style="padding:14px 14px 90px">
       <div style="background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.08)">
         ${isC?`<div style="display:grid;grid-template-columns:1fr 1fr;padding:18px 10px;text-align:center"><div style="border-right:1px solid #eee"><div style="color:#777">${tx('youGave')}</div><div style="font-size:23px;font-weight:850;color:#c13a3a;margin-top:4px">${money(ct.gave)}</div></div><div><div style="color:#777">${tx('youGot')}</div><div style="font-size:23px;font-weight:850;color:#34834b;margin-top:4px">${money(ct.got)}</div></div></div>`
-        :`<div style="padding:20px"><div style="font-size:16px">Total purchase / payable</div><div style="font-size:28px;font-weight:900;margin-top:7px">${money(t.a)}</div></div>`}
+        :`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:18px 8px;text-align:center"><div style="border-right:1px solid #eee"><div style="color:#777;font-size:12px">${tx('totalPurchase')}</div><div style="font-size:20px;font-weight:850;color:#2d8c49;margin-top:4px">${money(st.purchase)}</div></div><div style="border-right:1px solid #eee"><div style="color:#777;font-size:12px">${tx('totalPayment')}</div><div style="font-size:20px;font-weight:850;color:#c13a3a;margin-top:4px">${money(st.payment)}</div></div><div><div style="color:#777;font-size:12px">${tx('netPayable')}</div><div style="font-size:20px;font-weight:850;color:#1558b0;margin-top:4px">${money(Math.abs(st.balance))}</div></div></div>`}
         <div style="display:grid;grid-template-columns:1fr 1fr;background:#f6f7f9"><button onclick="kbGlobalReport('${type}')" style="padding:15px;border:0;background:transparent;color:#1558b0;font-weight:800">📄 ${isPa()?'ਰਿਪੋਰਟ':'VIEW REPORT'}</button><button onclick="kbShareGlobal('${type}')" style="padding:15px;border:0;background:transparent;color:#1558b0;font-weight:800">↗ ${isPa()?'ਸ਼ੇਅਰ':'SHARE'}</button></div>
       </div>
-      <div style="display:flex;gap:10px;margin:14px 0"><div style="flex:1;background:white;border-radius:15px;padding:11px 14px;display:flex;align-items:center;gap:8px"><span>🔍</span><input id="kbSearch" placeholder="${isC?tx('searchCustomer'):'Search Supplier'}" oninput="kbFilterList('${type}')" style="border:0;outline:0;width:100%;font-size:16px"></div><button onclick="kbGlobalReport('${type}')" style="border:0;background:#fff;border-radius:14px;padding:0 15px;font-size:22px;color:#1558b0">PDF</button></div>
+      <div style="display:flex;gap:10px;margin:14px 0"><div style="flex:1;background:white;border-radius:15px;padding:11px 14px;display:flex;align-items:center;gap:8px"><span>🔍</span><input id="kbSearch" placeholder="${isC?tx('searchCustomer'):tx('searchSupplier')}" oninput="kbFilterList('${type}')" style="border:0;outline:0;width:100%;font-size:16px"></div><button onclick="kbGlobalReport('${type}')" style="border:0;background:#fff;border-radius:14px;padding:0 15px;font-size:22px;color:#1558b0">PDF</button></div>
       <div id="kbList">${renderList(type,list)}</div>
-      <button onclick="kbAddEntity('${type}')" style="position:fixed;right:22px;bottom:26px;border:0;border-radius:28px;padding:15px 20px;background:${isC?'#a71d50':'#378a50'};color:white;font-size:17px;font-weight:850;box-shadow:0 8px 22px rgba(0,0,0,.2)">＋ ${isC?tx('addCustomer'):'Add Supplier'}</button>
+      <button onclick="kbAddEntity('${type}')" style="position:fixed;right:22px;bottom:26px;border:0;border-radius:28px;padding:15px 20px;background:${isC?'#a71d50':'#378a50'};color:white;font-size:17px;font-weight:850;box-shadow:0 8px 22px rgba(0,0,0,.2)">＋ ${isC?tx('addCustomer'):tx('addSupplier')}</button>
     </div>`);
   };
   function renderList(type,list){
     return list.map(x=>{const b=entityBal(x,type),isC=type==='customer';return `<div onclick="kbOpenLedger('${type}',${x.id})" style="background:#fff;border-bottom:1px solid #e7e7e7;padding:14px 10px;display:flex;gap:12px;align-items:center">
       <div style="width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:${isC?'#3778d0':'#348c55'};color:white;font-weight:800">${escK((x.name||'?').split(/\s+/).map(a=>a[0]).join('').slice(0,2).toUpperCase())}</div>
       <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escK(x.name)}</div><div style="color:#999;font-size:13px">${x.phone?escK(x.phone):'No phone'} • ${x.entries?.length||0} entries</div></div>
-      <div style="text-align:right;font-weight:850;color:${b===0?'#1558b0':(isC?(b>0?'#c33':'#388a4d'):(b>0?'#388a4d':'#c33'))}">${money(Math.abs(b))}<div style="font-size:12px;font-weight:500;color:#999">${isC?(b>0?tx('youWillGet'):b<0?tx('youWillGive'):(isPa()?'ਕਲੀਅਰ':'Clear')):(b>0?"You'll Give":b<0?"Advance":'Clear')}</div></div>
+      <div style="text-align:right;font-weight:850;color:${b===0?'#1558b0':(isC?(b>0?'#c33':'#388a4d'):(b>0?'#388a4d':'#c33'))}">${money(Math.abs(b))}<div style="font-size:12px;font-weight:500;color:#999">${isC?(b>0?tx('youWillGet'):b<0?tx('youWillGive'):(isPa()?'ਕਲੀਅਰ':'Clear')):(b>0?tx('netPayable'):b<0?tx('advancePaid'):(isPa()?'ਕਲੀਅਰ':'Clear'))}</div></div>
     </div>`}).join('')||'<div style="padding:30px;text-align:center;color:#888">No records yet.</div>';
   }
   window.kbFilterList=function(type){
@@ -155,11 +162,11 @@
     const list=type==='customer'?kb.customers:kb.suppliers,x=list.find(z=>z.id===eid);if(!x)return;const b=entityBal(x,type),isC=type==='customer';
     shell(type,`<div style="padding:14px 14px 100px">
       <div style="background:#fff;border-radius:18px;padding:15px;display:flex;gap:12px;align-items:center"><div style="width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:#1480ee;color:white;font-size:21px">${escK(x.name.split(/\s+/).map(a=>a[0]).join('').slice(0,2).toUpperCase())}</div><div style="flex:1"><div style="font-size:20px;font-weight:850">${escK(x.name)}</div><div style="color:#777">${escK(x.phone||'No phone')}</div></div><button onclick="kbEditEntity('${type}',${eid})" style="border:0;background:#f0f5fb;border-radius:11px;padding:10px">⋮</button></div>
-      <div style="background:#fff;border-radius:18px;margin-top:12px;padding:17px"><div style="display:flex;justify-content:space-between"><b>${isC?(b>=0?tx('youWillGet'):tx('youWillGive')):(b>=0?'You will give':'Advance paid')}</b><b style="font-size:20px;color:${b>=0?'#c43a3a':'#3a8c50'}">${money(Math.abs(b))}</b></div></div>
+      <div style="background:#fff;border-radius:18px;margin-top:12px;padding:17px"><div style="display:flex;justify-content:space-between"><b>${isC?(b>=0?tx('youWillGet'):tx('youWillGive')):(b>=0?tx('netPayable'):tx('advancePaid'))}</b><b style="font-size:20px;color:${b>=0?'#c43a3a':'#3a8c50'}">${money(Math.abs(b))}</b></div></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0"><button onclick="kbEntityReport('${type}',${eid})" style="padding:12px;border:0;background:#fff;border-radius:13px;color:#1558b0">📄 ${tx('report')}</button><button onclick="kbShareEntity('${type}',${eid})" style="padding:12px;border:0;background:#fff;border-radius:13px;color:#1558b0">↗ ${tx('share')}</button><button onclick="kbCall(${JSON.stringify(x.phone||'')})" style="padding:12px;border:0;background:#fff;border-radius:13px;color:#1558b0">☎ ${tx('call')}</button></div>
-      ${isC?`<div style="background:#eef5ff;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:12px;color:#456"><b>${tx('youGave')}</b> = ${tx('owes')} • <b>${tx('youGot')}</b> = ${tx('paid')}</div>`:''}<div style="display:grid;grid-template-columns:1fr 1fr 1fr;font-size:12px;color:#999;padding:7px 10px"><div>${isC?tx('entries'):'ENTRIES'}</div><div style="text-align:center">${isC?tx('youGave'):'PURCHASE'}</div><div style="text-align:right">${isC?tx('youGot'):'PAYMENT'}</div></div>
+      ${isC?`<div style="background:#eef5ff;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:12px;color:#456"><b>${tx('youGave')}</b> = ${tx('owes')} • <b>${tx('youGot')}</b> = ${tx('paid')}</div>`:''}<div style="display:grid;grid-template-columns:1fr 1fr 1fr;font-size:12px;color:#999;padding:7px 10px"><div>${isC?tx('entries'):(isPa()?'ਐਂਟਰੀਆਂ':'ENTRIES')}</div><div style="text-align:center">${isC?tx('youGave'):tx('purchase')}</div><div style="text-align:right">${isC?tx('youGot'):tx('payment')}</div></div>
       <div>${renderEntries(type,x)}</div>
-      ${isC?(()=>{const z=customerEntryTotals(x);return `<div style="background:#fff;border-radius:16px;margin-top:12px;padding:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center"><div><div style="font-size:11px;color:#888">${tx('totalDebit')}</div><b style="color:#c33">${money(z.debit)}</b></div><div><div style="font-size:11px;color:#888">${tx('totalCredit')}</div><b style="color:#2d8c49">${money(z.credit)}</b></div><div><div style="font-size:11px;color:#888">${tx('netBalance')}</div><b style="color:#1558b0">${money(Math.abs(z.balance))}</b></div></div>`})():''}
+      ${isC?(()=>{const z=customerEntryTotals(x);return `<div style="background:#fff;border-radius:16px;margin-top:12px;padding:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center"><div><div style="font-size:11px;color:#888">${tx('totalDebit')}</div><b style="color:#c33">${money(z.debit)}</b></div><div><div style="font-size:11px;color:#888">${tx('totalCredit')}</div><b style="color:#2d8c49">${money(z.credit)}</b></div><div><div style="font-size:11px;color:#888">${tx('netBalance')}</div><b style="color:#1558b0">${money(Math.abs(z.balance))}</b></div></div>`})():(()=>{const z=supplierEntryTotals(x);return `<div style="background:#fff;border-radius:16px;margin-top:12px;padding:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center"><div><div style="font-size:11px;color:#888">${tx('totalPurchase')}</div><b style="color:#2d8c49">${money(z.purchase)}</b></div><div><div style="font-size:11px;color:#888">${tx('totalPayment')}</div><b style="color:#c33">${money(z.payment)}</b></div><div><div style="font-size:11px;color:#888">${z.balance>=0?tx('netPayable'):tx('advancePaid')}</div><b style="color:#1558b0">${money(Math.abs(z.balance))}</b></div></div>`})()}
       <div style="position:fixed;left:0;right:0;bottom:0;background:white;padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;box-shadow:0 -6px 20px rgba(0,0,0,.08)">
         <button onclick="kbAddEntry('${type}',${eid},'${isC?'gave':'purchase'}')" style="padding:15px;border:0;border-radius:13px;background:${isC?'#c73732':'#078d49'};color:white;font-weight:900">${isC?tx('youGave')+' ₹<div style="font-size:10px;font-weight:600;opacity:.9">'+tx('customerOwes')+'</div>':'PURCHASE'}</button>
         <button onclick="kbAddEntry('${type}',${eid},'${isC?'got':'payment'}')" style="padding:15px;border:0;border-radius:13px;background:${isC?'#078d49':'#c73732'};color:white;font-weight:900">${isC?tx('youGot')+' ₹<div style="font-size:10px;font-weight:600;opacity:.9">'+tx('customerPaid')+'</div>':'PAYMENT'}</button>
