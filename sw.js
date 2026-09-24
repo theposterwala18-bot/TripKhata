@@ -1,11 +1,11 @@
-const CACHE='tripkhata-v076';
+const CACHE='tripkhata-v077';
 const ASSETS=[
   './','./index.html','./manifest.webmanifest',
-  './version.js?v=076','./member-v022.js','./settlement-v023.js','./ux-v024.js',
+  './version.js?v=077','./member-v022.js','./settlement-v023.js','./ux-v024.js',
   './ledger-v026.js','./statement-v027.js','./finish-v030.js','./fund-v040.js',
   './khata-v050.js?v=076','./supplier-v070.js?v=075','./services-v051.js',
   './firebase-config.js','./cloud-v060.js','./sync-v060.js','./auth-v060.js',
-  './final-ui-v061.js?v=075','./customer-report-v071.js?v=076','./backup-v074.js?v=075',
+  './final-ui-v061.js?v=075','./customer-report-v071.js?v=077','./backup-v074.js?v=075',
   './privacy.html','./delete-account.html'
 ];
 
