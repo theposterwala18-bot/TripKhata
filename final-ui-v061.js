@@ -87,6 +87,7 @@
       <div class="tkInfoCard"><b>Contact & Feedback</b><div class="tkMuted">Need help or want to suggest an improvement?</div>
         <div class="tkActionGrid"><a href="mailto:${OWNER_EMAIL}?subject=TripKhata%20Support">✉ Contact</a><a href="mailto:${OWNER_EMAIL}?subject=TripKhata%20Feedback%20%2F%20Suggestion">💬 Feedback</a></div>
         <div class="tkOwnerEmail">${OWNER_EMAIL}</div>
+        <div class="tkActionGrid"><a href="./privacy.html">🔒 Privacy Policy</a><a href="./delete-account.html" style="color:#c73531">🗑 Delete Account</a></div>
       </div>
       ${owner?'<div class="tkInfoCard"><b>Owner Tools</b><div class="tkMuted">Launch/admin utilities for this device.</div><div class="tkActionGrid"><button id="tkOwnerSync">Force Sync</button><button id="tkOwnerInfo">Copy App Info</button></div></div>':''}
       <button id="tkSignOut" class="tkDanger">Sign Out</button>
@@ -118,7 +119,7 @@
     $('#tkOldFinalCard')?.remove();
     if($('#tkLaunchSupportCard'))return;
     const c=document.createElement('div');c.id='tkLaunchSupportCard';c.className='card tkLaunchCard';
-    c.innerHTML='<div class="cardtitle">Help, Feedback & Account</div><div class="muted small" style="margin-top:4px">TripKhata v'+(window.TRIPKHATA_VERSION||'0.6.1')+'</div><div class="tkSettingsGrid"><button id="tkSettingsProfile">👤 Profile</button><button id="tkSettingsSync">☁ Sync Now</button><a href="mailto:'+OWNER_EMAIL+'?subject=TripKhata%20Feedback%20%2F%20Suggestion">💬 Feedback</a><a href="mailto:'+OWNER_EMAIL+'?subject=TripKhata%20Support">✉ Contact</a></div><div class="tkContactLine">'+OWNER_EMAIL+'</div>';
+    c.innerHTML='<div class="cardtitle">Help, Feedback & Account</div><div class="muted small" style="margin-top:4px">TripKhata v'+(window.TRIPKHATA_VERSION||'0.6.1')+'</div><div class="tkSettingsGrid"><button id="tkSettingsProfile">👤 Profile</button><button id="tkSettingsSync">☁ Sync Now</button><a href="mailto:'+OWNER_EMAIL+'?subject=TripKhata%20Feedback%20%2F%20Suggestion">💬 Feedback</a><a href="mailto:'+OWNER_EMAIL+'?subject=TripKhata%20Support">✉ Contact</a></div><div class="tkContactLine">'+OWNER_EMAIL+'</div><div class="tkSettingsGrid"><a href="./privacy.html">🔒 Privacy Policy</a><a href="./delete-account.html" style="color:#c73531">🗑 Delete Account</a></div>';
     set.appendChild(c);
     $('#tkSettingsProfile').onclick=openProfile;$('#tkSettingsSync').onclick=()=>window.tripKhataSyncNow?.();
   }
