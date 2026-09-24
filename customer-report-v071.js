@@ -1,51 +1,120 @@
-
+/* TripKhata Customer Reports v0.7.7 — full-page OkCredit-style reports */
 (function(){
-  'use strict';
-  const KEY='tripkhata_khatabook_v1';
-  const OWNER_EMAIL='dhaliwalballi18@gmail.com';
-  const $=s=>document.querySelector(s);
-  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2});
-  function load(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){return {}}}
-  function customer(id){return (load().customers||[]).find(x=>x.id===id)}
-  function showPicker(id){
-    document.getElementById('cr071')?.remove();
-    const x=customer(id); if(!x)return;
-    const d=document.createElement('div'); d.id='cr071';
-    d.innerHTML='<div class="crShade"><div class="crSheet"><div class="crHandle"></div><div class="crTop"><div><b>Customer Statement</b><span>'+esc(x.name)+'</span></div><button id="crClose">✕</button></div><p>Choose date range. Opening balance before From date will be included automatically.</p><div class="crGrid"><label>From<input id="crFrom" type="date"></label><label>To<input id="crTo" type="date" value="'+new Date().toISOString().slice(0,10)+'"></label></div><div class="crQuick"><button id="crAll">All Time</button><button id="crMonth">This Month</button><button id="crLastMonth">Last Month</button></div><button class="crPrimary" id="crOpen">View / Save PDF</button></div></div>';
-    document.body.appendChild(d);
-    $('#crClose').onclick=()=>d.remove();
-    $('#crAll').onclick=()=>{$('#crFrom').value=''};
-    $('#crMonth').onclick=()=>{const n=new Date();$('#crFrom').value=new Date(n.getFullYear(),n.getMonth(),1).toISOString().slice(0,10);$('#crTo').value=n.toISOString().slice(0,10)};$('#crLastMonth').onclick=()=>{const n=new Date(),s=new Date(n.getFullYear(),n.getMonth()-1,1),e=new Date(n.getFullYear(),n.getMonth(),0);$('#crFrom').value=s.toISOString().slice(0,10);$('#crTo').value=e.toISOString().slice(0,10)};
-    $('#crOpen').onclick=()=>build(id,$('#crFrom').value,$('#crTo').value);
+'use strict';
+const KEY='tripkhata_khatabook_v1';
+const OWNER_EMAIL='dhaliwalballi18@gmail.com';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2});
+function load(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){return {}}}
+function customer(id){return (load().customers||[]).find(x=>x.id===id)}
+function host(){return document.getElementById('kbHost')||document.body}
+function dateVal(d){return d.toISOString().slice(0,10)}
+function sign(e){return e.kind==='gave'?Number(e.amount||0):-Number(e.amount||0)}
+function statusText(v){return v>0?'You Will Get':v<0?'You Will Give':'Account Clear'}
+function createdDate(){return new Date().toLocaleDateString('en-GB')}
+function ownerName(){try{return JSON.parse(localStorage.getItem('tripkhata_profile')||'{}').name||'TripKhata'}catch(e){return 'TripKhata'}}
+
+function statementData(x,from,to){
+  const fd=from?new Date(from+'T00:00:00'):new Date(0);
+  const td=to?new Date(to+'T23:59:59'):new Date();
+  const all=[...(x.entries||[])].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const opening=all.filter(e=>new Date(e.date)<fd).reduce((s,e)=>s+sign(e),0);
+  const period=all.filter(e=>new Date(e.date)>=fd&&new Date(e.date)<=td);
+  let run=opening,debit=0,credit=0,debitCount=0,creditCount=0;
+  const rows=period.map(e=>{
+    const a=Number(e.amount)||0;
+    if(e.kind==='gave'){run+=a;debit+=a;debitCount++}else{run-=a;credit+=a;creditCount++}
+    return {date:new Date(e.date).toLocaleDateString('en-GB'),note:e.note||'',kind:e.kind,amount:a,running:run};
+  });
+  return {opening,closing:run,debit,credit,debitCount,creditCount,rows};
+}
+
+function statementHTML(x,from,to,forPrint){
+  const d=statementData(x,from,to),owner=ownerName();
+  const rows=d.rows.map(r=>'<tr><td>'+r.date+'</td><td>'+esc(r.note)+'</td><td class="num debit">'+(r.kind==='gave'?money(r.amount):'')+'</td><td class="num credit">'+(r.kind==='got'?money(r.amount):'')+'</td><td class="num">'+money(Math.abs(r.running))+'<small>'+statusText(r.running)+'</small></td></tr>').join('');
+  return '<section class="cr77report">'+
+    '<div class="cr77head"><div><h2>'+esc(owner)+'</h2><p>'+OWNER_EMAIL+'</p></div><div class="right"><small>Created on: '+createdDate()+'</small><span>Customer</span><h3>'+esc(x.name)+'</h3><p>'+esc(x.phone||'')+'</p>'+(x.address?'<p>'+esc(x.address)+'</p>':'')+'</div></div>'+
+    '<div class="cr77big"><b class="'+(d.closing>=0?'debit':'credit')+'">'+money(Math.abs(d.closing))+'</b><span>Balance | '+(from||'Beginning')+' - '+(to||'Today')+'</span><small>'+(d.closing>0?'Total Balance Due from Customer':d.closing<0?'Advance / You Have To Give':'Account Clear')+'</small></div>'+
+    '<div class="cr77totals"><div><span>Opening Balance</span><b>'+money(Math.abs(d.opening))+'</b><small>'+statusText(d.opening)+'</small></div><div><span class="debit">Debit ('+d.debitCount+')</span><b class="debit">'+money(d.debit)+'</b><small>You Gave / Customer owes</small></div><div><span class="credit">Credit ('+d.creditCount+')</span><b class="credit">'+money(d.credit)+'</b><small>You Got / Customer paid</small></div></div>'+
+    '<div class="cr77tablewrap"><table><thead><tr><th>Date</th><th>Notes / Details</th><th class="num debit">Debit</th><th class="num credit">Credit</th><th class="num">Running Balance</th></tr></thead><tbody>'+(rows||'<tr><td colspan="5" class="empty">No entries in selected period.</td></tr>')+'</tbody></table></div>'+
+    '<div class="cr77closing"><span>Current Balance:</span><b class="'+(d.closing>=0?'debit':'credit')+'">'+money(Math.abs(d.closing))+'</b><strong> ('+statusText(d.closing)+')</strong><small>As of '+(to||new Date().toLocaleDateString('en-GB'))+'</small></div>'+
+    '<div class="cr77foot"><span>Generated by TripKhata</span><span>'+OWNER_EMAIL+'</span></div>'+
+    (forPrint?'':'<div class="cr77actions"><button id="cr77print">PDF / Print</button></div>')+
+  '</section>';
+}
+
+function printStatement(id,from,to){
+  const x=customer(id);if(!x)return;
+  const w=window.open('','_blank');if(!w)return alert('Popup blocked. Allow popups for PDF.');
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(x.name)+' Statement</title><style>'+reportCSS(true)+'</style></head><body><main class="cr77print">'+statementHTML(x,from,to,true)+'<div class="printBtn"><button onclick="print()">Print / Save PDF</button></div></main></body></html>');
+  w.document.close();
+}
+
+function openStatement(id){
+  const x=customer(id);if(!x)return;
+  const h=host();
+  h.innerHTML='<div class="cr77page"><div class="cr77bar"><button id="cr77back">←</button><b>Customer Statement</b></div><main class="cr77main">'+
+    '<section class="cr77filter"><div class="cr77name">'+esc(x.name)+'</div><div class="cr77grid"><label>From<input id="cr77from" type="date"></label><label>To<input id="cr77to" type="date" value="'+dateVal(new Date())+'"></label></div><div class="cr77quick"><button id="cr77all">All Time</button><button id="cr77month">This Month</button><button id="cr77last">Last Month</button></div><button class="primary" id="cr77view">View Statement</button></section>'+
+    '<div id="cr77out"></div></main></div>';
+  $('#cr77back').onclick=()=>window.kbOpenLedger?window.kbOpenLedger('customer',id):history.back();
+  $('#cr77all').onclick=()=>{$('#cr77from').value='';render()};
+  $('#cr77month').onclick=()=>{const n=new Date();$('#cr77from').value=dateVal(new Date(n.getFullYear(),n.getMonth(),1));$('#cr77to').value=dateVal(n);render()};
+  $('#cr77last').onclick=()=>{const n=new Date(),s=new Date(n.getFullYear(),n.getMonth()-1,1),e=new Date(n.getFullYear(),n.getMonth(),0);$('#cr77from').value=dateVal(s);$('#cr77to').value=dateVal(e);render()};
+  $('#cr77view').onclick=render;
+  function render(){
+    const from=$('#cr77from').value,to=$('#cr77to').value;
+    $('#cr77out').innerHTML=statementHTML(x,from,to,false);
+    const p=$('#cr77print');if(p)p.onclick=()=>printStatement(id,from,to);
   }
-  function build(id,from,to){
-    const root=load(),x=(root.customers||[]).find(z=>z.id===id);if(!x)return;
-    const fd=from?new Date(from+'T00:00:00'):new Date(0),td=to?new Date(to+'T23:59:59'):new Date();
-    const all=[...(x.entries||[])].sort((a,b)=>new Date(a.date)-new Date(b.date));
-    const sign=e=>e.kind==='gave'?Number(e.amount||0):-Number(e.amount||0);
-    const opening=all.filter(e=>new Date(e.date)<fd).reduce((s,e)=>s+sign(e),0);
-    const period=all.filter(e=>new Date(e.date)>=fd&&new Date(e.date)<=td);
-    let run=opening,debit=0,credit=0,debitCount=0,creditCount=0;
-    const rows=period.map(e=>{
-      const a=Number(e.amount)||0;
-      if(e.kind==='gave'){run+=a;debit+=a;debitCount++}else{run-=a;credit+=a;creditCount++}
-      return '<tr><td>'+new Date(e.date).toLocaleDateString('en-GB')+'</td><td>'+esc(e.note||'')+'</td><td class="num debit">'+(e.kind==='gave'?money(a):'')+'</td><td class="num credit">'+(e.kind==='got'?money(a):'')+'</td><td class="num">'+money(Math.abs(run))+' <small>'+(run>=0?'You Will Get':'You Will Give')+'</small></td></tr>';
-    }).join('');
-    const closing=run, owner=root.profile?.name||'TripKhata';
-    const w=window.open('','_blank');if(!w)return alert('Popup blocked. Allow popups for PDF report.');
-    w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(x.name)+' Statement</title><style>'+
-      'body{font-family:Arial,sans-serif;color:#222;margin:0;background:#fff}.page{max-width:900px;margin:0 auto;padding:24px}.head{background:#f4f4f4;padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:20px}.head h2,.head h3,.head p{margin:0 0 5px}.right{text-align:right}.muted{color:#727b86;font-size:12px}.big{text-align:center;padding:24px 10px 18px}.big b{display:block;font-size:30px}.big span{display:block;margin-top:7px;font-size:14px}.big small{display:block;margin-top:4px;color:#7c8792}.red,.debit{color:#d63838!important}.green,.credit{color:#2f9b52!important}.totals{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid #e2e6eb;border-bottom:1px solid #e2e6eb;background:#fafafa}.totals div{padding:13px;text-align:center;border-right:1px solid #e2e6eb}.totals div:last-child{border-right:0}.totals span,.totals b,.totals small{display:block}.totals span{font-size:12px}.totals b{font-size:18px;margin-top:4px}.totals small{font-size:10px;color:#8a939e;margin-top:3px}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:12px;min-width:680px}th{background:#f1f3f6;text-align:left}th,td{border-bottom:1px solid #e0e4e9;padding:10px 8px}.num{text-align:right}td small{display:block;color:#8a95a0;font-size:9px;margin-top:2px}.closing{margin-top:18px;border-top:3px solid #222;background:#f5f5f5;padding:16px;text-align:right}.closing b{font-size:19px;margin-left:7px}.closing small{display:block;margin-top:6px;color:#727c88}.foot{display:flex;justify-content:space-between;color:#8a939e;font-size:10px;padding:14px 0}.actions button{padding:11px 14px;border:0;border-radius:8px;background:#1558b0;color:#fff;font-weight:800}@media(max-width:600px){.page{padding:10px}.head{grid-template-columns:1fr;gap:12px}.right{text-align:left}.totals{grid-template-columns:1fr 1fr 1fr}.big b{font-size:26px}}@media print{.actions{display:none}.page{max-width:none;padding:10mm}.head{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'+
-      '</style></head><body><div class="page">'+
-      '<div class="head"><div><h2>TripKhata</h2><p class="muted">'+OWNER_EMAIL+'</p></div><div class="right"><div class="muted">Created on: '+new Date(x.createdAt||Date.now()).toLocaleDateString('en-GB')+'</div><span>Customer:</span><h3>'+esc(x.name)+'</h3><p>'+esc(x.phone||'')+'</p>'+(x.address?'<p class="muted">'+esc(x.address)+'</p>':'')+'</div></div>'+
-      '<div class="big"><b class="'+(closing>=0?'red':'green')+'">'+money(Math.abs(closing))+'</b><span>Balance | '+(from||'Beginning')+' - '+(to||'Today')+'</span><small>'+(closing>=0?'Total Balance Due from Customer':closing<0?'Advance / You Have To Give':'Account Clear')+'</small></div>'+
-      '<div class="totals"><div><span>Opening Balance</span><b>'+money(Math.abs(opening))+'</b><small>'+(opening>=0?'You Will Get':'You Will Give')+'</small></div><div><span class="debit">Debit ('+debitCount+')</span><b class="debit">'+money(debit)+'</b><small>You Gave / Customer owes</small></div><div><span class="credit">Credit ('+creditCount+')</span><b class="credit">'+money(credit)+'</b><small>You Got / Customer paid</small></div></div>'+
-      '<div class="tablewrap"><table><thead><tr><th>Date</th><th>Notes / Details</th><th class="num debit">Debit</th><th class="num credit">Credit</th><th class="num">Running Balance</th></tr></thead><tbody>'+(rows||'<tr><td colspan="5" style="text-align:center;padding:25px">No entries in selected period.</td></tr>')+'</tbody></table></div>'+
-      '<div class="closing"><span>Current Balance:</span><b class="'+(closing>=0?'red':'green')+'">'+money(Math.abs(closing))+'</b><strong> ('+(closing>=0?'Total Balance Due':'Advance / Payable')+')</strong><small>As of '+(to||new Date().toLocaleDateString('en-GB'))+'</small></div>'+
-      '<div class="foot"><span>Generated by TripKhata</span><span>'+OWNER_EMAIL+'</span></div><div class="actions"><button onclick="print()">PDF / Print</button></div></div></body></html>');    w.document.close();
-  }
-  window.openCustomerStatementV2=showPicker;
-  const old=window.kbEntityReport;
-  window.kbEntityReport=function(type,id){if(type==='customer')return showPicker(id);return old?old(type,id):null};
-  const st=document.createElement('style');st.textContent='.crShade{position:fixed;inset:0;z-index:2000;background:#10233f88;display:flex;align-items:flex-end;justify-content:center}.crSheet{width:min(540px,100%);background:#fff;border-radius:22px 22px 0 0;padding:16px 18px 24px;box-shadow:0 -15px 50px #0002}.crHandle{width:46px;height:5px;background:#d5dce6;border-radius:8px;margin:0 auto 14px}.crTop{display:flex;justify-content:space-between;align-items:flex-start}.crTop b,.crTop span{display:block}.crTop b{font-size:21px}.crTop span{font-size:12px;color:#718096}.crTop button{border:0;background:#f0f4f8;border-radius:10px;padding:8px}.crSheet p{font-size:12px;color:#687689;line-height:1.5}.crGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.crGrid label{font-size:12px;color:#667}.crGrid input{width:100%;box-sizing:border-box;margin-top:5px;padding:11px;border:1px solid #d8e1ec;border-radius:10px}.crQuick{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.crQuick button{border:1px solid #d5e0ee;background:#f7faff;border-radius:9px;padding:8px}.crPrimary{width:100%;margin-top:14px;padding:13px;border:0;border-radius:11px;background:#1558b0;color:#fff;font-weight:900}';document.head.appendChild(st);
+  render();
+}
+
+function globalData(){
+  const root=load(),list=root.customers||[];
+  let gave=0,got=0,get=0,give=0;
+  const rows=list.map(x=>{
+    let b=0,xd=0,xc=0;
+    (x.entries||[]).forEach(e=>{const a=Number(e.amount)||0;if(e.kind==='gave'){b+=a;gave+=a;xd+=a}else{b-=a;got+=a;xc+=a}});
+    if(b>0)get+=b;else if(b<0)give+=-b;
+    return {x,b,debit:xd,credit:xc};
+  });
+  return {rows,gave,got,get,give};
+}
+function globalHTML(forPrint){
+  const d=globalData(),owner=ownerName();
+  const rows=d.rows.map(r=>'<tr><td><b>'+esc(r.x.name)+'</b><small>'+esc(r.x.phone||'No phone')+'</small></td><td class="num debit">'+money(r.debit)+'</td><td class="num credit">'+money(r.credit)+'</td><td class="num '+(r.b>=0?'debit':'credit')+'">'+money(Math.abs(r.b))+'<small>'+statusText(r.b)+'</small></td></tr>').join('');
+  return '<section class="cr77report">'+
+    '<div class="cr77head"><div><h2>'+esc(owner)+'</h2><p>'+OWNER_EMAIL+'</p></div><div class="right"><small>Created on: '+createdDate()+'</small><h3>Customer Khata Report</h3><p>All Customers</p></div></div>'+
+    '<div class="cr77big"><b class="'+(d.get>=d.give?'debit':'credit')+'">'+money(Math.abs(d.get-d.give))+'</b><span>Net Customer Balance</span><small>'+(d.get>=d.give?'Net Amount To Receive':'Net Amount To Give')+'</small></div>'+
+    '<div class="cr77totals cr77four"><div><span class="debit">You Gave</span><b class="debit">'+money(d.gave)+'</b></div><div><span class="credit">You Got</span><b class="credit">'+money(d.got)+'</b></div><div><span class="debit">You Will Get</span><b class="debit">'+money(d.get)+'</b></div><div><span class="credit">You Will Give</span><b class="credit">'+money(d.give)+'</b></div></div>'+
+    '<div class="cr77tablewrap"><table><thead><tr><th>Customer</th><th class="num debit">Debit / You Gave</th><th class="num credit">Credit / You Got</th><th class="num">Balance</th></tr></thead><tbody>'+(rows||'<tr><td colspan="4" class="empty">No customers yet.</td></tr>')+'</tbody></table></div>'+
+    '<div class="cr77foot"><span>Generated by TripKhata</span><span>'+OWNER_EMAIL+'</span></div>'+
+    (forPrint?'':'<div class="cr77actions"><button id="cr77globalPrint">PDF / Print</button></div>')+
+  '</section>';
+}
+function printGlobal(){
+  const w=window.open('','_blank');if(!w)return alert('Popup blocked. Allow popups for PDF.');
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Customer Khata Report</title><style>'+reportCSS(true)+'</style></head><body><main class="cr77print">'+globalHTML(true)+'<div class="printBtn"><button onclick="print()">Print / Save PDF</button></div></main></body></html>');
+  w.document.close();
+}
+function openGlobal(){
+  const h=host();
+  h.innerHTML='<div class="cr77page"><div class="cr77bar"><button id="cr77gback">←</button><b>Customer Khata Report</b></div><main class="cr77main"><div id="cr77global">'+globalHTML(false)+'</div></main></div>';
+  $('#cr77gback').onclick=()=>window.kbOpenMain?window.kbOpenMain('customer'):history.back();
+  const p=$('#cr77globalPrint');if(p)p.onclick=printGlobal;
+}
+function reportCSS(print){
+  return '.cr77report{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 3px 14px #183b6610}.cr77head{display:grid;grid-template-columns:1fr 1fr;gap:20px;background:#f4f4f4;padding:20px}.cr77head h2,.cr77head h3,.cr77head p{margin:0 0 6px}.cr77head .right{text-align:right}.cr77head span,.cr77head small{display:block;color:#6f7782}.cr77big{text-align:center;padding:26px 14px 20px}.cr77big b{display:block;font-size:30px}.cr77big span{display:block;margin-top:7px;font-size:14px}.cr77big small{display:block;margin-top:4px;color:#7c8792}.debit{color:#d63838!important}.credit{color:#2f9b52!important}.cr77totals{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #e2e6eb;border-bottom:1px solid #e2e6eb;background:#fafafa}.cr77totals.cr77four{grid-template-columns:repeat(4,1fr)}.cr77totals>div{padding:13px;text-align:center;border-right:1px solid #e2e6eb}.cr77totals>div:last-child{border-right:0}.cr77totals span,.cr77totals b,.cr77totals small{display:block}.cr77totals b{font-size:17px;margin-top:4px}.cr77totals span{font-size:12px}.cr77totals small{font-size:10px;color:#8a939e}.cr77tablewrap{overflow:auto}.cr77tablewrap table{width:100%;border-collapse:collapse;font-size:12px;min-width:650px}.cr77tablewrap th{background:#f1f3f6;text-align:left}.cr77tablewrap th,.cr77tablewrap td{padding:10px 9px;border-bottom:1px solid #e0e4e9}.cr77tablewrap td small{display:block;color:#8a95a0;font-size:9px;margin-top:3px}.num{text-align:right!important}.empty{text-align:center!important;padding:25px!important;color:#8793a0}.cr77closing{margin:18px 14px 0;border-top:3px solid #222;background:#f5f5f5;padding:17px;text-align:right}.cr77closing b{font-size:19px;margin-left:7px}.cr77closing small{display:block;margin-top:6px;color:#727c88}.cr77foot{display:flex;justify-content:space-between;color:#8a939e;font-size:10px;padding:14px}.cr77actions{padding:0 14px 14px}.cr77actions button,.printBtn button{width:100%;padding:11px;border:0;border-radius:9px;background:#1558b0;color:#fff;font-weight:900}.printBtn{margin-top:14px}@media(max-width:600px){.cr77head{grid-template-columns:1fr;gap:10px}.cr77head .right{text-align:left}.cr77totals.cr77four{grid-template-columns:1fr 1fr}.cr77big b{font-size:26px}}'+(print?'@media print{.printBtn{display:none}.cr77report{box-shadow:none}.cr77print{padding:8mm}}':'');
+}
+
+window.openCustomerStatementV2=openStatement;
+const oldEntity=window.kbEntityReport;
+window.kbEntityReport=function(type,id){if(type==='customer')return openStatement(id);return oldEntity?oldEntity(type,id):null};
+const oldGlobal=window.kbGlobalReport;
+window.kbGlobalReport=function(type){if(type==='customer')return openGlobal();return oldGlobal?oldGlobal(type):null};
+
+const st=document.createElement('style');
+st.textContent=reportCSS(false)+'.cr77page{position:fixed;inset:0;z-index:2100;background:#e2e9f2;overflow:auto;font-family:Inter,system-ui,-apple-system,sans-serif}.cr77bar{position:sticky;top:0;z-index:5;max-width:760px;margin:auto;background:#1558b0;color:#fff;padding:17px 15px;display:flex;align-items:center;gap:12px}.cr77bar button{border:0;background:transparent;color:#fff;font-size:27px}.cr77bar b{font-size:18px}.cr77main{max-width:760px;min-height:calc(100vh - 62px);margin:auto;background:#f3f6f9;padding:14px 14px 90px;box-sizing:border-box}.cr77filter{background:#fff;border-radius:16px;padding:14px;box-shadow:0 3px 14px #183b6610;margin-bottom:12px}.cr77name{font-size:18px;font-weight:900;margin-bottom:10px}.cr77grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.cr77grid label{font-size:11px;color:#667386;font-weight:800}.cr77grid input{width:100%;box-sizing:border-box;margin-top:5px;padding:11px;border:1px solid #d7e1ec;border-radius:10px}.cr77quick{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.cr77quick button{border:1px solid #d6e0ec;background:#f8fbff;border-radius:9px;padding:8px;color:#1558b0;font-weight:800}.cr77filter .primary{width:100%;margin-top:10px;padding:12px;border:0;border-radius:10px;background:#1677ff;color:#fff;font-weight:900}@media(max-width:780px){.cr77page{background:#f3f6f9}.cr77bar,.cr77main{max-width:none}.cr77main{padding:10px 10px 90px}}';
+document.head.appendChild(st);
 })();
