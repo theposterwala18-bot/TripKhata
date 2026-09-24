@@ -34,10 +34,10 @@ jobs:
         run: gradle assembleDebug --stacktrace
 
       - name: Prepare APK artifact
-        run: cp android-wrapper/app/build/outputs/apk/debug/app-debug.apk TripKhata-v0.7.4-test.apk
+        run: cp android-wrapper/app/build/outputs/apk/debug/app-debug.apk TripKhata-v0.7.5-test.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: TripKhata-v0.7.4-test-apk
-          path: TripKhata-v0.7.4-test.apk
+          name: TripKhata-v0.7.5-test-apk
+          path: TripKhata-v0.7.5-test.apk
