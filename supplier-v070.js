@@ -123,20 +123,20 @@ function sendSMS(p,text){
 function reminderOne(pid){
  var d=db().d,p=d.parties.find(function(x){return x.id===pid});if(!p)return;
  var b=d.businesses.find(function(x){return x.id===p.businessId}),z=balance(d,pid);
- if(z<=0)return alert('No payable balance for this party.');
- var text=reminderText(p,z,b);
+ if(z>=0)return alert('This party does not owe you any payment. Collection reminder is only for receivable balances.');
+ var text=reminderText(p,Math.abs(z),b);
  shell('Payment Reminder','<main class="s70pad"><section class="s70card s70form"><div><b>'+esc(p.name)+'</b><small style="display:block;color:#7d8998">'+esc(p.phone||'No phone')+'</small></div><label>Pending Amount<input value="'+money(z)+'" disabled></label><label>Message<textarea id="s70rmsg">'+esc(text)+'</textarea></label><div class="s70split"><button class="s70wa" id="s70rwa">WhatsApp</button><button class="s70sms" id="s70rsms">SMS</button></div></section></main>',function(){ledger(pid)});
  q('#s70rwa').onclick=function(){sendWhatsApp(p,q('#s70rmsg').value)};
  q('#s70rsms').onclick=function(){sendSMS(p,q('#s70rmsg').value)};
 }
 function reminders(bid){
- var d=db().d,b=d.businesses.find(function(x){return x.id===bid}),ps=d.parties.filter(function(p){return p.businessId===bid&&balance(d,p.id)>0});
- shell('Payment Reminders','<main class="s70pad"><section class="s70card"><p style="margin-top:0;color:#687689">Select one or more parties. WhatsApp/SMS will open for each selected party so you stay in control before sending.</p><div id="s70remList">'+ps.map(function(p){var z=balance(d,p.id);return '<label class="s70remrow"><input type="checkbox" value="'+p.id+'"><span><b>'+esc(p.name)+'</b><small>'+esc(p.phone||'No phone')+'</small></span><strong>'+money(z)+'</strong></label>'}).join('')+'</div><div class="s70split" style="margin-top:12px"><button class="s70wa" id="s70multiwa">WhatsApp Selected</button><button class="s70sms" id="s70multisms">SMS Selected</button></div></section></main>',home);
+ var d=db().d,b=d.businesses.find(function(x){return x.id===bid}),ps=d.parties.filter(function(p){return p.businessId===bid&&balance(d,p.id)<0});
+ shell('Payment Reminders','<main class="s70pad"><section class="s70card"><p style="margin-top:0;color:#687689">Select parties who owe you money. WhatsApp/SMS will open for each selected party so you stay in control before sending.</p><div id="s70remList">'+ps.map(function(p){var z=Math.abs(balance(d,p.id));return '<label class="s70remrow"><input type="checkbox" value="'+p.id+'"><span><b>'+esc(p.name)+'</b><small>'+esc(p.phone||'No phone')+'</small></span><strong>'+money(z)+'</strong></label>'}).join('')+'</div><div class="s70split" style="margin-top:12px"><button class="s70wa" id="s70multiwa">WhatsApp Selected</button><button class="s70sms" id="s70multisms">SMS Selected</button></div></section></main>',home);
  function selected(){return Array.from(document.querySelectorAll('#s70remList input:checked')).map(function(x){return Number(x.value)})}
  async function run(kind){
    var ids=selected();if(!ids.length)return alert('Select at least one party.');
    if(ids.length>1&&!confirm('Open '+ids.length+' reminder messages one by one?'))return;
-   ids.forEach(function(pid,i){var p=d.parties.find(function(x){return x.id===pid}),z=balance(d,pid),text=reminderText(p,z,b);setTimeout(function(){kind==='wa'?sendWhatsApp(p,text):sendSMS(p,text)},i*450)});
+   ids.forEach(function(pid,i){var p=d.parties.find(function(x){return x.id===pid}),z=Math.abs(balance(d,pid)),text=reminderText(p,z,b);setTimeout(function(){kind==='wa'?sendWhatsApp(p,text):sendSMS(p,text)},i*450)});
  }
  q('#s70multiwa').onclick=function(){run('wa')};q('#s70multisms').onclick=function(){run('sms')};
 }
