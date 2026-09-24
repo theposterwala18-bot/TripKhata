@@ -173,7 +173,7 @@ async function shareBackup(){
 
 function card(){
   const set=$('#page-settings');if(!set)return;
-  const old=$('#tkBackupCard');if(old)old.remove();
+  const old=$('#tkBackupCard');if(old)return;
   const driveConnected=!!driveToken();
   const c=document.createElement('div');c.id='tkBackupCard';c.className='card';
   c.innerHTML=
@@ -207,7 +207,7 @@ function card(){
   };
   $('#tkDriveConnect').onclick=async()=>{
     const b=$('#tkDriveConnect');b.disabled=true;b.textContent='Connecting…';
-    try{await connectDrive();alert('Google Drive connected.');card()}
+    try{await connectDrive();alert('Google Drive connected.');c.remove();card()}
     catch(e){alert('Drive connect error: '+e.message);b.disabled=false;b.textContent='Connect Google Drive'}
   };
   $('#tkDriveNow').onclick=async()=>{
@@ -230,5 +230,5 @@ window.addEventListener('online',()=>setTimeout(autoAll,1500));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(autoAll,1200)});
 setTimeout(autoAll,3500);
 setInterval(autoAll,300000);
-setInterval(card,2200);
+setTimeout(card,1800);setInterval(()=>{if(!$('#tkBackupCard'))card()},5000);
 })();
