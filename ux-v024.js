@@ -69,5 +69,4 @@
   const oldTrip=window.renderTrip;
   window.renderTrip=function(){oldTrip();setTimeout(paintVersion,0)};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',paintVersion);else setTimeout(paintVersion,0);
-  setInterval(paintVersion,1000);
 })();
