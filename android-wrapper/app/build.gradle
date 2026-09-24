@@ -1,0 +1,24 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.theposterwala.tripkhata'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.theposterwala.tripkhata'
+        minSdk 24
+        targetSdk 35
+        versionCode 703
+        versionName '0.7.3-test'
+    }
+
+    buildTypes {
+        debug { minifyEnabled false }
+        release { minifyEnabled false }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
