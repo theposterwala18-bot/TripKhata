@@ -60,6 +60,13 @@ function ownerDashboard(){
   $('#tk80info').onclick=async()=>{const s='TripKhata v'+(window.TRIPKHATA_VERSION||'')+' | '+location.href+' | '+(window.TRIPKHATA_CLOUD?.status||'unknown');try{await navigator.clipboard.writeText(s);alert('Copied.')}catch(e){alert(s)}};
 }
 
+function patchMailLinks(){
+  document.querySelectorAll('a[href^="mailto:"]').forEach(a=>{
+    const h=a.getAttribute('href')||'',t=(a.textContent||'').toLowerCase();
+    if(/feedback|suggestion/i.test(h)||t.includes('feedback')){a.href='#';a.onclick=e=>{e.preventDefault();support('feedback')}}
+    else if(/support/i.test(h)||t.includes('contact')){a.href='#';a.onclick=e=>{e.preventDefault();support('contact')}}
+  });
+}
 function patchSettings(){
   const set=$('#page-settings');if(!set)return;
   let card=$('#tk80SupportCard');
@@ -73,6 +80,7 @@ function patchSettings(){
   $('#tk80contact')&&($('#tk80contact').onclick=()=>support('contact'));
   $('#tk80feedback')&&($('#tk80feedback').onclick=()=>support('feedback'));
   $('#tk80owner')&&($('#tk80owner').onclick=ownerDashboard);
+  patchMailLinks();
 }
 
 window.tripKhataContact=()=>support('contact');
@@ -82,6 +90,6 @@ window.tripKhataOwnerDashboard=ownerDashboard;
 const st=document.createElement('style');
 st.textContent='.tk80shade{position:fixed;inset:0;z-index:4200;background:#10244499;display:flex;align-items:flex-end;justify-content:center}.tk80sheet{width:min(560px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:22px 22px 0 0;padding:17px 18px 24px;box-sizing:border-box}.tk80top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.tk80top b,.tk80top small{display:block}.tk80top b{font-size:21px}.tk80top small{color:#7a8798}.tk80top button{border:0;background:#eef3f8;border-radius:9px;padding:8px}.tk80sheet label{display:block;margin-top:13px;font-size:12px;font-weight:800;color:#607087}.tk80sheet select,.tk80sheet textarea{width:100%;box-sizing:border-box;margin-top:6px;padding:11px;border:1px solid #d9e2ed;border-radius:10px;font:inherit}.tk80sheet textarea{min-height:110px}.tk80grid,.tk80settings{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.tk80grid button,.tk80settings button,.tk80block,.tk80ownerbtn{border:1px solid #dbe4ef;background:#fff;color:#1558b0;border-radius:10px;padding:11px;font-weight:850}.tk80grid .primary{background:#1558b0;color:#fff;border-color:#1558b0}.tk80block,.tk80ownerbtn{width:100%;margin-top:9px}.tk80ownerbtn{background:#fff8e6;color:#7b5b00;border-color:#f1dfad}.tk80hint{font-size:10px;color:#8793a2;margin-top:10px;line-height:1.45}.tk80stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}.tk80stats>div{background:#f5f8fc;border-radius:12px;padding:12px;text-align:center}.tk80stats span,.tk80stats b{display:block}.tk80stats span{font-size:10px;color:#7a8797}.tk80stats b{font-size:20px;margin-top:3px}.tk80card{margin-top:12px;background:#f8fafc;border:1px solid #e3e9f1;border-radius:12px;padding:12px}.tk80card small{display:block;color:#8490a0;margin-top:5px}';
 document.head.appendChild(st);
-setTimeout(patchSettings,1400);
+setTimeout(()=>{patchSettings();patchMailLinks()},1400);
 const old=window.renderSettings;if(typeof old==='function'&&!old.__tk80){const w=function(){const r=old.apply(this,arguments);setTimeout(patchSettings,0);return r};w.__tk80=true;window.renderSettings=w}
 })();
