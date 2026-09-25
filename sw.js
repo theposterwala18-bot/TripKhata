@@ -1,12 +1,12 @@
-const CACHE='tripkhata-v090';
+const CACHE='tripkhata-v091';
 const ASSETS=[
   './','./index.html','./manifest.webmanifest',
-  './version.js?v=090','./member-v022.js','./settlement-v023.js','./ux-v024.js',
+  './version.js?v=091','./member-v022.js','./settlement-v023.js','./ux-v024.js',
   './ledger-v026.js','./statement-v027.js','./finish-v030.js','./fund-v040.js',
   './khata-v050.js?v=076','./supplier-v070.js?v=082','./services-v051.js',
   './firebase-config.js','./owner-config.js?v=081','./cloud-v060.js','./sync-v060.js','./auth-v060.js?v=080',
   './final-ui-v061.js?v=080','./customer-report-v071.js?v=077','./backup-v074.js?v=080',
-  './support-owner-v080.js?v=080','./nav-persist-v080.js?v=080','./shared-trip-v090.js?v=090','./connected-khata-v082.js?v=082','./privacy.html','./delete-account.html'
+  './support-owner-v080.js?v=080','./nav-persist-v080.js?v=080','./shared-trip-v090.js?v=091','./connected-khata-v082.js?v=082','./privacy.html','./delete-account.html'
 ];
 
 self.addEventListener('install',event=>{
