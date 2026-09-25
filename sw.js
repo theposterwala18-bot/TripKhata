@@ -5,7 +5,7 @@ const ASSETS=[
   './ledger-v026.js','./statement-v027.js','./finish-v030.js','./fund-v040.js',
   './khata-v050.js?v=076','./supplier-v070.js?v=075','./services-v051.js',
   './firebase-config.js','./owner-config.js?v=080','./cloud-v060.js','./sync-v060.js','./auth-v060.js?v=080',
-  './final-ui-v061.js?v=075','./customer-report-v071.js?v=077','./backup-v074.js?v=080?v=080',
+  './final-ui-v061.js?v=075','./customer-report-v071.js?v=077','./backup-v074.js?v=080',
   './support-owner-v080.js?v=080','./nav-persist-v080.js?v=080','./privacy.html','./delete-account.html'
 ];
 
