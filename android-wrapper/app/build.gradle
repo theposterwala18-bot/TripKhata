@@ -8,8 +8,8 @@ android {
         applicationId 'com.theposterwala.tripkhata'
         minSdk 24
         targetSdk 35
-        versionCode 704
-        versionName '0.7.4-test'
+        versionCode 800
+        versionName '0.8.0-test'
     }
 
     buildTypes {
