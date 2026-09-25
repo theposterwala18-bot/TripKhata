@@ -271,7 +271,7 @@ function manageHTML(){
     '<div class="st90note">Owner/Admin/Member can update trip. Viewer is read-only. Existing local TripKhata copy remains available even if shared connection is removed.</div></div>';
 }
 function openManage(){
-  const t=trip(),s=t?.sharedTrip;if(!s)return createShare();
+  const t=trip(),s=t?.sharedTrip;if(!s?.tripId)return createShare();
   $('#st90shade')?.remove();const d=document.createElement('div');d.id='st90shade';d.className='st90shade';d.innerHTML=manageHTML();document.body.appendChild(d);d.onclick=e=>{if(e.target===d)d.remove()};
   $('#st90close').onclick=()=>d.remove();$('#st90share').onclick=()=>shareInvite(s.inviteCode);
   $('#st90activity').onclick=showActivity;
@@ -284,13 +284,13 @@ function openManage(){
 function card(){
   const set=$('#page-settings');if(!set)return;
   $('#tkSharedCard')?.remove();
-  const t=trip(),s=t?.sharedTrip,c=document.createElement('div');c.id='tkSharedCard';c.className='card';
+  const t=trip(),s=t?.sharedTrip,secure=!!t?.sharedTrip?.tripId,c=document.createElement('div');c.id='tkSharedCard';c.className='card';
   c.innerHTML='<div class="cardtitle">👥 Shared Trip</div><div class="muted small" style="margin-top:4px">'+(s?'Realtime sync connected.':'Share one trip across friends’ phones with roles and invite code.')+'</div>'+
-    (s?'<div class="st90cardstatus"><b>'+esc(s.inviteCode||'Invite')+'</b><span>'+roleLabel(myRole())+' • '+(navigator.onLine?'Live':'Offline')+'</span></div>':'')+
-    '<div class="st90grid"><button id="st90main" class="btn primary">'+(s?'Manage Shared Trip':'Share Current Trip')+'</button><button id="st90how" class="btn soft">'+(s?'Share Invite':'How It Works')+'</button></div>'+
+    (secure?'<div class="st90cardstatus"><b>'+esc(s.inviteCode||'Invite')+'</b><span>'+roleLabel(myRole())+' • '+(navigator.onLine?'Live':'Offline')+'</span></div>':(s?'<div class="st90cardstatus"><b>Old Beta Share</b><span>Create new secure Shared Trip</span></div>':''))+
+    '<div class="st90grid"><button id="st90main" class="btn primary">'+(secure?'Manage Shared Trip':'Share Current Trip')+'</button><button id="st90how" class="btn soft">'+(secure?'Share Invite':'How It Works')+'</button></div>'+
     '<label class="st90label">Join another Shared Trip</label><div class="st90join"><input id="st90code" placeholder="Enter invite code"><button id="st90join">Join</button></div>';
   set.appendChild(c);
-  $('#st90main').onclick=()=>s?openManage():createShare();$('#st90how').onclick=()=>s?shareInvite(s.inviteCode):alert('1. Owner opens a trip and taps Share Current Trip.\n2. Invite code/link friend nu send karo.\n3. Friend login karke invite code Join field ch enter kare.\n4. Trip changes realtime sab members te sync honge.');
+  $('#st90main').onclick=()=>secure?openManage():createShare();$('#st90how').onclick=()=>secure?shareInvite(s.inviteCode):alert('1. Owner opens a trip and taps Share Current Trip.\n2. Invite code/link friend nu send karo.\n3. Friend login karke invite code Join field ch enter kare.\n4. Trip changes realtime sab members te sync honge.');
   $('#st90join').onclick=()=>joinShare($('#st90code').value);$('#st90code').onkeydown=e=>{if(e.key==='Enter')$('#st90join').click()};
 }
 function refreshCard(){card();if($('#st90shade')){const m=$('#st90members');if(m)m.innerHTML=memberRows()}}
