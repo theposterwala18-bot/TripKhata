@@ -93,6 +93,18 @@
         <button id="tkSaveProfile" class="tkPrimary">Save Profile</button>
         <button id="tkSyncNow">☁ Sync Now</button>
       </div>
+      <div class="tkInfoCard" id="tkProfileSharedTrip">
+        <b>👥 Shared Trip</b>
+        <div class="tkMuted">Share current trip with friends or join using an invite code.</div>
+        <div class="tkActionGrid">
+          <button id="tkProfileShareTrip" class="tkPrimary">Share / Manage Trip</button>
+          <button id="tkProfileHowShared">How It Works</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px">
+          <input id="tkProfileJoinCode" placeholder="Enter invite code" style="min-width:0;padding:11px;border:1px solid #dce3ed;border-radius:11px;text-transform:uppercase">
+          <button id="tkProfileJoinTrip" style="border:1px solid #dce5f1;background:#fff;color:#1558b0;border-radius:11px;padding:11px 14px;font-weight:800">Join</button>
+        </div>
+      </div>
       <div class="tkInfoCard"><b>Contact & Feedback</b><div class="tkMuted">Need help or want to suggest an improvement?</div>
         <div class="tkActionGrid"><a href="mailto:${OWNER_EMAIL}?subject=TripKhata%20Support">✉ Contact</a><a href="mailto:${OWNER_EMAIL}?subject=TripKhata%20Feedback%20%2F%20Suggestion">💬 Feedback</a></div>
         <div class="tkOwnerEmail">${OWNER_EMAIL}</div>
@@ -116,6 +128,10 @@
       stableHeader();d.remove();
     };
     $('#tkSyncNow').onclick=()=>window.tripKhataSyncNow?.();
+    $('#tkProfileShareTrip').onclick=()=>{d.remove();if(window.tripKhataSharedManage)window.tripKhataSharedManage();else if(window.tripKhataShareCurrentTrip)window.tripKhataShareCurrentTrip();else alert('Shared Trip module loading. Please refresh once.')};
+    $('#tkProfileHowShared').onclick=()=>alert('1. Owner opens a trip and taps Share / Manage Trip.\n2. Invite code/link friend nu send karo.\n3. Friend apne TripKhata account te invite code enter karke Join kare.\n4. Realtime sync start ho ju.');
+    $('#tkProfileJoinTrip').onclick=()=>{const code=$('#tkProfileJoinCode').value.trim();if(!code)return alert('Invite code enter karo.');d.remove();window.tripKhataJoinSharedTrip?.(code)};
+    $('#tkProfileJoinCode').onkeydown=e=>{if(e.key==='Enter')$('#tkProfileJoinTrip').click()};
     $('#tkSignOut').onclick=()=>{d.remove();window.tripKhataAccount?.()};
     if(owner){
       $('#tkOwnerSync').onclick=()=>window.tripKhataSyncNow?.();
