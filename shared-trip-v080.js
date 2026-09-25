@@ -126,11 +126,13 @@ function card(){
   const c=document.createElement('div');c.id='tkSharedCard';c.className='card';
   c.innerHTML='<div class="cardtitle">👥 Shared Trip (Beta)</div><div class="muted small" style="margin-top:4px">Same trip on multiple friends’ phones using invite code + realtime cloud sync.</div>'+
     (s?'<div style="margin-top:10px;padding:11px;background:#f3f7fc;border-radius:11px"><b>'+esc(s.code)+'</b><div class="muted small">'+esc(role(t))+' • '+esc(s.ownerEmail||'')+'</div></div>':'')+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><button id="tkShareCreate" class="btn primary">'+(s?'Share Invite Again':'Share Current Trip')+'</button><button id="tkShareJoin" class="btn soft">Join by Code</button></div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><button id="tkShareCreate" class="btn primary">'+(s?'Share Invite Again':'Share Current Trip')+'</button><button id="tkShareCopy" class="btn soft">'+(s?'Copy Invite':'How It Works')+'</button></div><div style="margin-top:10px"><label style="font-size:11px;font-weight:800;color:#64748b">Enter Invite Code</label><div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:5px"><input id="tkShareCode" placeholder="Example: TKABC123" style="padding:11px;border:1px solid #d8e2ee;border-radius:10px;text-transform:uppercase"><button id="tkShareJoin" class="btn soft">Join Trip</button></div></div>'+
     '<button id="tkShareAudit" class="btn soft" style="width:100%;margin-top:8px">View Activity / Audit Trail</button>';
   set.appendChild(c);
   $('#tkShareCreate').onclick=()=>s?copyInvite(s.code):createShare();
-  $('#tkShareJoin').onclick=showJoin;
+  $('#tkShareCopy').onclick=()=>s?copyInvite(s.code):alert('1. Owner opens a trip and taps Share Current Trip.\n2. TripKhata creates an invite code/link.\n3. Friend logs in, opens Shared Trip, enters the code and taps Join Trip.');
+  $('#tkShareJoin').onclick=()=>{const v=$('#tkShareCode').value.trim();if(v)joinShare(v);else alert('Invite code enter karo.')};
+  $('#tkShareCode').onkeydown=e=>{if(e.key==='Enter')$('#tkShareJoin').click()};
   $('#tkShareAudit').onclick=showAudit;
 }
 function refreshCard(){$('#tkSharedCard')?.remove();card()}
