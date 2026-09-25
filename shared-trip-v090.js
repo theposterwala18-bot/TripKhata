@@ -5,7 +5,7 @@ const $=(s,r=document)=>r.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const DEVICE=localStorage.getItem('tripkhata_device_id')||('d_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8));
 const PENDING='tripkhata_pending_shared_invite_v090';
-let stateOff=null,metaOff=null,membersOff=null,pushTimer=null,applying=false,lastRev=0,membersCache=[];
+let stateOff=null,metaOff=null,membersOff=null,pushTimer=null,applying=false,lastRev=0,lastCanonical=null,membersCache=[];
 
 function user(){return window.TK_AUTH?.currentUser||null}
 function trip(){try{return typeof getTrip==='function'?getTrip():null}catch(e){return null}}
@@ -56,7 +56,7 @@ function detach(){
   if(stateOff){stateOff();stateOff=null}
   if(metaOff){metaOff();metaOff=null}
   if(membersOff){membersOff();membersOff=null}
-  membersCache=[];lastRev=0;
+  membersCache=[];lastRev=0;lastCanonical=null;
 }
 async function createInvite(id,ownerUid){
   const code=inviteCode();
@@ -86,7 +86,7 @@ async function createShare(){
     localAudit('Shared Trip created',code);saveLocal();
     batch.set(r.state,{snapshot:currentSnapshot(),revision:1,updatedBy:u.uid,updatedName:u.displayName||u.email||'',updatedDevice:DEVICE,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAtClient:Date.now()});
     await batch.commit();
-    lastRev=1;startWatch(id);await addAudit('Shared Trip created','Invite '+code);refreshCard();shareInvite(code);
+    lastRev=1;lastCanonical=currentSnapshot();startWatch(id);await addAudit('Shared Trip created','Invite '+code);refreshCard();shareInvite(code);
   }catch(e){alert(err(e))}
 }
 async function resolveInvite(code){
@@ -122,7 +122,7 @@ async function joinShare(code){
     Object.assign(t,clean(sd.snapshot));
     t.sharedTrip={tripId:inv.tripId,inviteCode:m.currentInviteCode||inv.code,ownerUid:m.ownerUid||inv.ownerUid||'',ownerEmail:m.ownerEmail||'',role:(m.ownerUid===u.uid?'owner':(existing.exists?(existing.data().role||'member'):'member')),joinedAt:new Date().toISOString()};
     localAudit('Joined Shared Trip',inv.code);saveLocal();applying=false;
-    lastRev=Number(sd.revision||0);
+    lastRev=Number(sd.revision||0);lastCanonical=clean(t);
     await addAudit('Member joined',u.email||u.displayName||u.uid);
     startWatch(inv.tripId);if(typeof renderTrip==='function')renderTrip();refreshCard();alert('Shared Trip joined. Realtime sync ON.');
   }catch(e){applying=false;alert(err(e))}
@@ -154,7 +154,7 @@ function applyRemote(d){
   Object.assign(t,clean(d.snapshot));
   if(localShared)t.sharedTrip=localShared;
   localAudit('Realtime update received',d.updatedName||'Another member');
-  saveLocal();lastRev=rev;applying=false;
+  lastCanonical=clean(t);saveLocal();lastRev=rev;applying=false;
   if(typeof renderTrip==='function')setTimeout(renderTrip,40);
   toast('Shared Trip updated');
 }
@@ -165,12 +165,12 @@ function startWatch(id){
   metaOff=r.base.onSnapshot(s=>{
     if(!s.exists)return;
     const m=s.data()||{},t=trip();if(!t?.sharedTrip||t.sharedTrip.tripId!==id)return;
-    t.sharedTrip.ownerUid=m.ownerUid||t.sharedTrip.ownerUid;t.sharedTrip.ownerEmail=m.ownerEmail||t.sharedTrip.ownerEmail;t.sharedTrip.inviteCode=m.currentInviteCode||t.sharedTrip.inviteCode;
-    if(user()?.uid===m.ownerUid)t.sharedTrip.role='owner';saveLocal();refreshCard();
+    applying=true;t.sharedTrip.ownerUid=m.ownerUid||t.sharedTrip.ownerUid;t.sharedTrip.ownerEmail=m.ownerEmail||t.sharedTrip.ownerEmail;t.sharedTrip.inviteCode=m.currentInviteCode||t.sharedTrip.inviteCode;
+    if(user()?.uid===m.ownerUid)t.sharedTrip.role='owner';saveLocal();applying=false;refreshCard();
   },e=>console.warn('Shared meta watch',e));
   membersOff=r.members.onSnapshot(q=>{
     membersCache=q.docs.map(d=>d.data()||{});const me=membersCache.find(m=>m.uid===user()?.uid),t=trip();
-    if(t?.sharedTrip&&me&&t.sharedTrip.tripId===id){t.sharedTrip.role=me.role||'member';saveLocal()}
+    if(t?.sharedTrip&&me&&t.sharedTrip.tripId===id){applying=true;t.sharedTrip.role=me.role||'member';saveLocal();applying=false}
     refreshCard();
   },e=>console.warn('Shared members watch',e));
 }
@@ -296,7 +296,29 @@ function card(){
 }
 function refreshCard(){card();if($('#st90shade')){const m=$('#st90members');if(m)m.innerHTML=memberRows()}}
 function hookSave(){
-  const old=window.save;if(typeof old==='function'&&!old.__st90){const w=function(){const r=old.apply(this,arguments);if(!applying&&trip()?.sharedTrip?.tripId)schedulePush();return r};w.__st90=true;window.save=w}
+  const old=window.save;if(typeof old==='function'&&!old.__st90){
+    const w=function(){
+      const t=trip(),shared=!!t?.sharedTrip?.tripId;
+      if(shared&&!applying&&myRole()==='viewer'){
+        if(lastCanonical){
+          applying=true;
+          const keepShared=clean(t.sharedTrip);
+          Object.keys(t).forEach(k=>delete t[k]);
+          Object.assign(t,clean(lastCanonical));
+          if(keepShared)t.sharedTrip=keepShared;
+          const r=old.apply(this,arguments);
+          applying=false;
+          if(typeof renderTrip==='function')setTimeout(renderTrip,20);
+          alert('Viewer mode read-only aa. Change save nahi hoi.');
+          return r;
+        }
+      }
+      const r=old.apply(this,arguments);
+      if(shared&&!applying)schedulePush();
+      return r;
+    };
+    w.__st90=true;window.save=w
+  }
 }
 const joinParam=new URLSearchParams(location.search).get('join');if(joinParam)localStorage.setItem(PENDING,joinParam.toUpperCase());
 setTimeout(()=>{
