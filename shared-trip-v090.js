@@ -327,6 +327,23 @@ setTimeout(()=>{
   const p=localStorage.getItem(PENDING);if(p&&user()&&t){localStorage.removeItem(PENDING);setTimeout(()=>joinShare(p),300)}
 },2200);
 const oldRS=window.renderSettings;if(typeof oldRS==='function'&&!oldRS.__st90){const w=function(){const r=oldRS.apply(this,arguments);setTimeout(card,0);return r};w.__st90=true;window.renderSettings=w}
+
+/* Settings can be rebuilt by older UI modules after this script runs.
+   Keep Shared Trip card persistent without touching their rendering logic. */
+let st90ObserverTimer=null;
+const st90Observer=new MutationObserver(()=>{
+  clearTimeout(st90ObserverTimer);
+  st90ObserverTimer=setTimeout(()=>{
+    const set=document.querySelector('#page-settings');
+    if(set&&!document.querySelector('#tkSharedCard'))card();
+  },60);
+});
+st90Observer.observe(document.documentElement,{childList:true,subtree:true});
+document.addEventListener('click',e=>{
+  const target=e.target?.closest?.('[data-page="settings"],[href="#settings"],#nav-settings,.nav-settings');
+  if(target)setTimeout(card,120);
+},true);
+
 window.addEventListener('online',()=>{const t=trip();if(t?.sharedTrip?.tripId){startWatch(t.sharedTrip.tripId);schedulePush()}refreshCard()});
 window.addEventListener('offline',refreshCard);
 window.tripKhataShareCurrentTrip=createShare;
