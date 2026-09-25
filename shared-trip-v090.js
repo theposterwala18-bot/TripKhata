@@ -223,6 +223,7 @@ async function transferOwner(uid){
     batch.update(r.base,{ownerUid:uid,ownerEmail:m.email||'',updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
     batch.update(r.members.doc(uid),{role:'owner'});
     batch.update(r.members.doc(u.uid),{role:'member'});
+    if(s.inviteCode)batch.set(db.collection('sharedTripInvites').doc(s.inviteCode),{ownerUid:uid},{merge:true});
     await batch.commit();s.ownerUid=uid;s.ownerEmail=m.email||'';s.role='member';saveLocal();await addAudit('Ownership transferred',m.email||m.name||uid);refreshCard();
   }catch(e){alert(err(e))}
 }
