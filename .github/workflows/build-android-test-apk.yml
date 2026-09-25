@@ -2,6 +2,10 @@ name: Build TripKhata Test APK
 
 on:
   push:
+    branches: [ main ]
+    paths:
+      - 'android-wrapper/**'
+      - '.github/workflows/build-android-test-apk.yml'
   workflow_dispatch:
 
 jobs:
@@ -34,10 +38,10 @@ jobs:
         run: gradle assembleDebug --stacktrace
 
       - name: Prepare APK artifact
-        run: cp android-wrapper/app/build/outputs/apk/debug/app-debug.apk TripKhata-v0.7.5-test.apk
+        run: cp android-wrapper/app/build/outputs/apk/debug/app-debug.apk TripKhata-v0.8.0-test.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: TripKhata-v0.7.5-test-apk
-          path: TripKhata-v0.7.5-test.apk
+          name: TripKhata-v0.8.0-test-apk
+          path: TripKhata-v0.8.0-test.apk
