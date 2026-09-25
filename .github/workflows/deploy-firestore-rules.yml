@@ -1,0 +1,40 @@
+name: Deploy Firestore Rules
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Write service account
+        shell: bash
+        env:
+          FIREBASE_SERVICE_ACCOUNT_TRIPKHATA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TRIPKHATA }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_TRIPKHATA" ]; then
+            echo "Missing GitHub secret: FIREBASE_SERVICE_ACCOUNT_TRIPKHATA"
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_TRIPKHATA" > "$RUNNER_TEMP/firebase-sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-sa.json" >> "$GITHUB_ENV"
+
+      - name: Validate Firestore rules
+        run: firebase --version
+
+      - name: Deploy Firestore rules
+        run: firebase deploy --only firestore:rules --project tripkhata-a5b27 --non-interactive
