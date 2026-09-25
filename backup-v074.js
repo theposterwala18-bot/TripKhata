@@ -162,6 +162,40 @@ function downloadBackup(){
   a.href=URL.createObjectURL(blob);a.download='TripKhata-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
+function applyBackupData(data){
+  if(!data||typeof data!=='object')throw new Error('Invalid TripKhata backup file.');
+  if(!confirm('Restore backup? Current local TripKhata data may be replaced.'))return false;
+  try{
+    if(data.tripState&&typeof state!=='undefined'){
+      const keepUser=state.user?JSON.parse(JSON.stringify(state.user)):null;
+      const keepCloud=state.cloud?JSON.parse(JSON.stringify(state.cloud)):null;
+      Object.keys(state).forEach(k=>delete state[k]);
+      Object.assign(state,JSON.parse(JSON.stringify(data.tripState)));
+      if(keepUser)state.user=keepUser;if(keepCloud)state.cloud=keepCloud;
+      if(typeof save==='function')save();
+    }
+    const allowed=new Set(KEEP_KEYS);
+    Object.entries(data.local||{}).forEach(([k,v])=>{if(allowed.has(k)&&typeof v==='string')localStorage.setItem(k,v)});
+    if(typeof renderAll==='function')setTimeout(renderAll,50);
+    alert('Backup restored. Reloading TripKhata.');
+    setTimeout(()=>location.reload(),500);
+    return true;
+  }catch(e){throw new Error('Restore failed: '+e.message)}
+}
+async function restoreFile(file){
+  const txt=await file.text();let data;try{data=JSON.parse(txt)}catch(e){throw new Error('Backup file is not valid JSON.')}
+  return applyBackupData(data);
+}
+async function restoreLatestDrive(){
+  const token=driveToken();if(!token)throw new Error('Connect Google Drive first.');
+  const folder=await ensureDriveFolder(token);
+  const qstr=encodeURIComponent("'"+folder+"' in parents and trashed=false");
+  const r=await driveFetch('https://www.googleapis.com/drive/v3/files?q='+qstr+'&orderBy=createdTime desc&pageSize=1&fields=files(id,name,createdTime)');
+  const j=await r.json(),file=j.files&&j.files[0];if(!file)throw new Error('No TripKhata Drive backup found.');
+  if(!confirm('Restore latest Drive backup?\n'+file.name))return;
+  const rr=await driveFetch('https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(file.id)+'?alt=media');
+  const data=await rr.json();applyBackupData(data);
+}
 async function shareBackup(){
   const blob=backupBlob(),file=new File([blob],'TripKhata-backup-'+new Date().toISOString().slice(0,10)+'.json',{type:'application/json'});
   try{
@@ -193,7 +227,7 @@ function card(){
     '<button id="tkDriveNow" style="width:100%;margin-top:9px;padding:11px;border:0;border-radius:10px;background:#168a4b;color:#fff;font-weight:900">Backup to Drive Now</button>'+
     '<div style="margin-top:8px;font-size:10px;line-height:1.45;color:#8a95a4">Google permission is required once per session/token expiry. Fully unattended backup while the app is closed needs a later backend refresh-token setup.</div>'+
   '</div>'+
-  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px"><button id="tkShareBackup" style="padding:11px;border:1px solid #dbe4ef;border-radius:10px;background:#fff;color:#1558b0;font-weight:900">Share Backup</button><button id="tkDownloadBackup" style="padding:11px;border:1px solid #dbe4ef;border-radius:10px;background:#fff;color:#1558b0;font-weight:900">Download File</button></div>';
+  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px"><button id="tkDriveRestore" style="padding:11px;border:1px solid #dbe4ef;border-radius:10px;background:#fff;color:#168a4b;font-weight:900">Restore Latest Drive</button><label style="padding:11px;border:1px solid #dbe4ef;border-radius:10px;background:#fff;color:#1558b0;font-weight:900;text-align:center;cursor:pointer">Restore File<input id="tkRestoreFile" type="file" accept=".json,application/json" style="display:none"></label></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><button id="tkShareBackup" style="padding:11px;border:1px solid #dbe4ef;border-radius:10px;background:#fff;color:#1558b0;font-weight:900">Share Backup</button><button id="tkDownloadBackup" style="padding:11px;border:1px solid #dbe4ef;border-radius:10px;background:#fff;color:#1558b0;font-weight:900">Download File</button></div>';
 
   set.appendChild(c);
   const cf=$('#tkBackupFreq');cf.value=localStorage.getItem(CLOUD_PREF)||'weekly';cf.onchange=()=>{localStorage.setItem(CLOUD_PREF,cf.value);autoCloud()};
@@ -223,7 +257,7 @@ function card(){
 window.tripKhataBackupNow=()=>saveCloud('manual');
 window.tripKhataDriveConnect=connectDrive;
 window.tripKhataDriveBackupNow=()=>saveDrive('manual');
-window.tripKhataShareBackup=shareBackup;
+window.tripKhataShareBackup=shareBackup;window.tripKhataRestoreLatestDrive=restoreLatestDrive;window.tripKhataRestoreFile=restoreFile;
 
 async function autoAll(){await autoCloud();await autoDrive()}
 window.addEventListener('online',()=>setTimeout(autoAll,1500));
