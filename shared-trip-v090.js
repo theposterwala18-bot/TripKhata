@@ -294,7 +294,42 @@ function card(){
   $('#st90main').onclick=()=>secure?openManage():createShare();$('#st90how').onclick=()=>secure?shareInvite(s.inviteCode):alert('1. Owner opens a trip and taps Share Current Trip.\n2. Invite code/link friend nu send karo.\n3. Friend login karke invite code Join field ch enter kare.\n4. Trip changes realtime sab members te sync honge.');
   $('#st90join').onclick=()=>joinShare($('#st90code').value);$('#st90code').onkeydown=e=>{if(e.key==='Enter')$('#st90join').click()};
 }
-function refreshCard(){card();if($('#st90shade')){const m=$('#st90members');if(m)m.innerHTML=memberRows()}}
+function refreshCard(){card();profileQuickAccess();if($('#st90shade')){const m=$('#st90members');if(m)m.innerHTML=memberRows()}}
+
+function profileQuickAccess(){
+  if(document.querySelector('#st90ProfileAccess'))return;
+  const buttons=[...document.querySelectorAll('button')];
+  const exportBtn=buttons.find(b=>/export backup/i.test((b.textContent||'').trim()));
+  const importBtn=buttons.find(b=>/import backup/i.test((b.textContent||'').trim()));
+  const signBtn=buttons.find(b=>/sign out/i.test((b.textContent||'').trim()));
+  if(!exportBtn||!importBtn||!signBtn)return;
+
+  let box=exportBtn.parentElement;
+  while(box&&box!==document.body){
+    const txt=box.textContent||'';
+    if(/export backup/i.test(txt)&&/import backup/i.test(txt)&&/sign out/i.test(txt))break;
+    box=box.parentElement;
+  }
+  if(!box||box===document.body)return;
+
+  const t=trip(),s=t?.sharedTrip,secure=!!s?.tripId;
+  const q=document.createElement('div');
+  q.id='st90ProfileAccess';
+  q.className='st90profilecard';
+  q.innerHTML='<div class="st90profiletitle">👥 Shared Trip</div>'+
+    '<div class="st90profilesub">'+(secure?'Realtime shared trip connected.':'Share this trip with friends or join using invite code.')+'</div>'+
+    (secure?'<div class="st90profilepill">'+esc(s.inviteCode||'Invite')+' • '+roleLabel(myRole())+'</div>':'')+
+    '<div class="st90profilegrid"><button id="st90ProfileMain">'+(secure?'Manage Shared Trip':'Share Current Trip')+'</button><button id="st90ProfileShare">'+(secure?'Share Invite':'How It Works')+'</button></div>'+
+    '<div class="st90profilejoin"><input id="st90ProfileCode" placeholder="Enter invite code"><button id="st90ProfileJoin">Join</button></div>';
+
+  signBtn.parentElement?.insertBefore(q,signBtn);
+
+  $('#st90ProfileMain').onclick=()=>{document.querySelector('#tkFinalProfile')?.remove();secure?openManage():createShare()};
+  $('#st90ProfileShare').onclick=()=>secure?shareInvite(s.inviteCode):alert('1. Owner opens a trip and taps Share Current Trip.\n2. Invite code/link friend nu send karo.\n3. Friend apne TripKhata account te code enter karke Join kare.\n4. Realtime sync start ho ju.');
+  $('#st90ProfileJoin').onclick=()=>joinShare($('#st90ProfileCode').value);
+  $('#st90ProfileCode').onkeydown=e=>{if(e.key==='Enter')$('#st90ProfileJoin').click()};
+}
+
 function hookSave(){
   const old=window.save;if(typeof old==='function'&&!old.__st90){
     const w=function(){
@@ -322,7 +357,7 @@ function hookSave(){
 }
 const joinParam=new URLSearchParams(location.search).get('join');if(joinParam)localStorage.setItem(PENDING,joinParam.toUpperCase());
 setTimeout(()=>{
-  hookSave();card();
+  hookSave();card();profileQuickAccess();
   const t=trip(),s=t?.sharedTrip;if(s?.tripId)startWatch(s.tripId);
   const p=localStorage.getItem(PENDING);if(p&&user()&&t){localStorage.removeItem(PENDING);setTimeout(()=>joinShare(p),300)}
 },2200);
@@ -336,6 +371,7 @@ const st90Observer=new MutationObserver(()=>{
   st90ObserverTimer=setTimeout(()=>{
     const set=document.querySelector('#page-settings');
     if(set&&!document.querySelector('#tkSharedCard'))card();
+    profileQuickAccess();
   },60);
 });
 st90Observer.observe(document.documentElement,{childList:true,subtree:true});
@@ -351,5 +387,5 @@ window.tripKhataJoinSharedTrip=joinShare;
 window.tripKhataSharedManage=openManage;
 window.tripKhataSharedAudit=showActivity;
 
-const css=document.createElement('style');css.textContent='.st90shade{position:fixed;inset:0;z-index:4400;background:#10244499;display:flex;align-items:flex-end;justify-content:center}.st90modal{width:min(620px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:22px 22px 0 0;padding:17px 18px 24px;box-sizing:border-box}.st90top{display:flex;justify-content:space-between}.st90top b,.st90top small{display:block}.st90top b{font-size:21px}.st90top small{color:#7b8797}.st90top button{border:0;background:#eef3f8;border-radius:9px;padding:8px}.st90status{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:14px}.st90status>div,.st90cardstatus{background:#f5f8fc;border-radius:11px;padding:11px;text-align:center}.st90status span,.st90status b,.st90cardstatus b,.st90cardstatus span{display:block}.st90status span,.st90cardstatus span{font-size:10px;color:#788596}.st90status b{font-size:13px;margin-top:3px}.st90cardstatus{margin-top:10px}.st90actions,.st90grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}.st90actions button,.st90join button,.st90member button,.st90member select{border:1px solid #d8e2ed;background:#fff;color:#1558b0;border-radius:9px;padding:9px;font-weight:800}.st90member{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 0;border-bottom:1px solid #e9edf2}.st90member b,.st90member small{display:block}.st90member small{color:#7c8797;margin-top:2px}.st90right{text-align:right}.st90right>span{display:block;font-size:10px;color:#66768a;margin-bottom:5px}.st90right select,.st90right button{padding:6px;margin-left:4px;font-size:10px}.danger{width:100%;margin-top:13px;padding:12px;border:0;border-radius:10px;background:#fff0ef;color:#c9322d;font-weight:900}.st90note{margin-top:12px;padding:10px;background:#f4f7fb;border-radius:10px;color:#6f7d90;font-size:10px;line-height:1.45}.st90label{display:block;margin-top:11px;font-size:11px;font-weight:800;color:#64748b}.st90join{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:5px}.st90join input{padding:11px;border:1px solid #d8e2ed;border-radius:10px;text-transform:uppercase}.st90grid{grid-template-columns:1fr 1fr}.st90muted{color:#7d8998;font-size:11px;padding:10px 0}@media(max-width:520px){.st90actions{grid-template-columns:1fr 1fr}.st90member{align-items:flex-start}.st90right select,.st90right button{display:block;margin:4px 0 0 auto}}';document.head.appendChild(css);
+const css=document.createElement('style');css.textContent='.st90shade{position:fixed;inset:0;z-index:4400;background:#10244499;display:flex;align-items:flex-end;justify-content:center}.st90modal{width:min(620px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:22px 22px 0 0;padding:17px 18px 24px;box-sizing:border-box}.st90top{display:flex;justify-content:space-between}.st90top b,.st90top small{display:block}.st90top b{font-size:21px}.st90top small{color:#7b8797}.st90top button{border:0;background:#eef3f8;border-radius:9px;padding:8px}.st90status{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:14px}.st90status>div,.st90cardstatus{background:#f5f8fc;border-radius:11px;padding:11px;text-align:center}.st90status span,.st90status b,.st90cardstatus b,.st90cardstatus span{display:block}.st90status span,.st90cardstatus span{font-size:10px;color:#788596}.st90status b{font-size:13px;margin-top:3px}.st90cardstatus{margin-top:10px}.st90actions,.st90grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}.st90actions button,.st90join button,.st90member button,.st90member select{border:1px solid #d8e2ed;background:#fff;color:#1558b0;border-radius:9px;padding:9px;font-weight:800}.st90member{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 0;border-bottom:1px solid #e9edf2}.st90member b,.st90member small{display:block}.st90member small{color:#7c8797;margin-top:2px}.st90right{text-align:right}.st90right>span{display:block;font-size:10px;color:#66768a;margin-bottom:5px}.st90right select,.st90right button{padding:6px;margin-left:4px;font-size:10px}.danger{width:100%;margin-top:13px;padding:12px;border:0;border-radius:10px;background:#fff0ef;color:#c9322d;font-weight:900}.st90note{margin-top:12px;padding:10px;background:#f4f7fb;border-radius:10px;color:#6f7d90;font-size:10px;line-height:1.45}.st90label{display:block;margin-top:11px;font-size:11px;font-weight:800;color:#64748b}.st90join{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:5px}.st90join input{padding:11px;border:1px solid #d8e2ed;border-radius:10px;text-transform:uppercase}.st90grid{grid-template-columns:1fr 1fr}.st90muted{color:#7d8998;font-size:11px;padding:10px 0}.st90profilecard{margin-top:12px;padding:12px;border:1px solid #dce5f1;border-radius:14px;background:#f8fbff}.st90profiletitle{font-weight:900;color:#13284b}.st90profilesub{font-size:10px;color:#738198;margin-top:3px}.st90profilepill{margin-top:8px;padding:8px;border-radius:9px;background:#eef5ff;color:#1558b0;font-size:11px;font-weight:800;text-align:center}.st90profilegrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.st90profilegrid button,.st90profilejoin button{border:1px solid #d8e2ed;background:#fff;color:#1558b0;border-radius:9px;padding:10px;font-weight:850}.st90profilejoin{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}.st90profilejoin input{min-width:0;padding:10px;border:1px solid #d8e2ed;border-radius:9px;text-transform:uppercase}@media(max-width:520px){.st90actions{grid-template-columns:1fr 1fr}.st90member{align-items:flex-start}.st90right select,.st90right button{display:block;margin:4px 0 0 auto}}';document.head.appendChild(css);
 })();
