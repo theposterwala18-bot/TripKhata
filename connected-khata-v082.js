@@ -91,11 +91,9 @@ async function compare(pid){
   try{
     const ref=db().collection('connectedKhataRequests').doc(rec.code),s=await ref.get();if(!s.exists)return alert('Connection not found.');
     let z=s.data()||{},local=bal(x.d,pid);
-    if(z.requester?.uid===u.uid)z.requester.balance=local;
-    else if(z.acceptor?.uid===u.uid)z.acceptor.balance=local;
-    await ref.set(z.requester?.uid===u.uid?{'requester.balance':local}:{'acceptor.balance':local},{merge:true}).catch(()=>{});
-    s2=await ref.get();
-  }catch(e){}
+    if(z.requester?.uid===u.uid)await ref.update({'requester.balance':local});
+    else if(z.acceptor?.uid===u.uid)await ref.update({'acceptor.balance':local});
+  }catch(e){console.warn('Connected Khata balance refresh',e)}
   try{
     const s=await db().collection('connectedKhataRequests').doc(rec.code).get(),z=s.data()||{};
     const a=Number(z.requester?.balance||0),b=Number(z.acceptor?.balance||0);
