@@ -9,16 +9,10 @@
   "description": "Friends, trips and shared expense manager",
   "icons": [
     {
-      "src": "./icons/tripkhata-app-icon.png",
+      "src": "./icons/tripkhata-app-icon.png?v=105",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "./icons/tripkhata-logo.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
     }
   ]
 }
