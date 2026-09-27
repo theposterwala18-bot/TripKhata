@@ -47,7 +47,7 @@ function legacyGuest(){
 }
 function baseShell(){
   return '<div class="tk100authcard">'+
-    '<div class="tk100brand"><img src="./icons/tripkhata-logo.svg" alt=""><div><h1>TripKhata</h1><p>Friends • Trips • Hisab</p></div></div>'+
+    '<div class="tk100brand"><img src="./icons/tripkhata-app-icon.png" alt=""><div><h1>TripKhata</h1><p>Friends • Trips • Hisab</p></div></div>'+
     '<div id="tkAuthErr" class="tk100err"></div>'+
     '<div id="tk100choices">'+
       '<button id="tkPhoneBtn" class="tk100primary" style="display:none">📱 Continue with Mobile OTP</button>'+
