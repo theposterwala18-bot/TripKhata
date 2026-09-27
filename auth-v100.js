@@ -50,7 +50,7 @@ function baseShell(){
     '<div class="tk100brand"><img src="./icons/tripkhata-logo.svg" alt=""><div><h1>TripKhata</h1><p>Friends • Trips • Hisab</p></div></div>'+
     '<div id="tkAuthErr" class="tk100err"></div>'+
     '<div id="tk100choices">'+
-      '<button id="tkPhoneBtn" class="tk100primary">📱 Continue with Mobile OTP</button>'+
+      '<button id="tkPhoneBtn" class="tk100primary" style="display:none">📱 Continue with Mobile OTP</button>'+
       '<button id="tkGoogle" class="tk100btn">G&nbsp;&nbsp; Continue with Google</button>'+
       '<button id="tkEmailBtn" class="tk100btn">✉️ Email Login</button>'+
       '<button id="tkGuest" class="tk100guest">Continue as Guest (Offline)</button>'+
