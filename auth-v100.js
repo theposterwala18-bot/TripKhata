@@ -47,7 +47,7 @@ function legacyGuest(){
 }
 function baseShell(){
   return '<div class="tk100authcard">'+
-    '<div class="tk100brand"><img src="./icons/icon.svg" alt=""><div><h1>TripKhata</h1><p>Friends • Trips • Hisab</p></div></div>'+
+    '<div class="tk100brand"><img src="./icons/tripkhata-logo.svg" alt=""><div><h1>TripKhata</h1><p>Friends • Trips • Hisab</p></div></div>'+
     '<div id="tkAuthErr" class="tk100err"></div>'+
     '<div id="tk100choices">'+
       '<button id="tkPhoneBtn" class="tk100primary">📱 Continue with Mobile OTP</button>'+
@@ -124,6 +124,7 @@ function show(){
       const code=e.code||'';
       if(code==='auth/operation-not-allowed') errbox('Mobile OTP request allow nahi hoi. Firebase Phone provider enabled hai tan Authentication → Settings → SMS region policy vich India allow karo.');
       else if(code==='auth/unauthorized-domain') errbox('Eh website domain Firebase Authorized domains vich add nahi hai.');
+      else if(code==='auth/billing-not-enabled') errbox('Mobile OTP layi Firebase project te Cloud Billing link karni zaroori hai. Google/Email login meanwhile fully available ne.');
       else if(code==='auth/quota-exceeded') errbox('Aj da Firebase SMS quota complete ho gaya.');
       else errbox((e.message||'OTP send nahi ho saki')+(code?' ['+code+']':''));
     }
