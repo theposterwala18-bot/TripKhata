@@ -58,7 +58,7 @@ function baseShell(){
     '<div id="tk100phone" class="tk100panel" style="display:none">'+
       '<button class="tk100back" data-back>← Back</button><h2>Mobile Login</h2><p>OTP tuhade mobile number te aayega.</p>'+
       '<input id="tkPhone" inputmode="tel" placeholder="+91 98765 43210">'+
-      '<div id="tkRecaptcha"></div>'+
+
       '<button id="tkSendOtp" class="tk100primary">Send OTP</button>'+
       '<div id="tkOtpWrap" style="display:none"><input id="tkOtp" inputmode="numeric" maxlength="6" placeholder="6-digit OTP"><button id="tkVerifyOtp" class="tk100primary">Verify & Continue</button></div>'+
     '</div>'+
@@ -113,11 +113,19 @@ function show(){
       if(/^\d{10}$/.test(phone))phone='+91'+phone;
       if(!/^\+\d{10,15}$/.test(phone))return errbox('Valid mobile number country code nal enter karo.');
       if(recaptcha){try{recaptcha.clear()}catch(e){}}
-      recaptcha=new firebase.auth.RecaptchaVerifier('tkRecaptcha',{size:'normal'});
+      recaptcha=new firebase.auth.RecaptchaVerifier('tkSendOtp',{
+        size:'invisible',
+        callback:()=>{},
+        'expired-callback':()=>{try{recaptcha.clear()}catch(_){};recaptcha=null}
+      });
       phoneConfirmation=await window.TK_AUTH.signInWithPhoneNumber(phone,recaptcha);
       $('#tkOtpWrap').style.display='block';$('#tkSendOtp').textContent='OTP Sent';
     }catch(e){
-      errbox(e.code==='auth/operation-not-allowed'?'Mobile OTP login Firebase Authentication vich enable nahi hai.':e.message);
+      const code=e.code||'';
+      if(code==='auth/operation-not-allowed') errbox('Mobile OTP request allow nahi hoi. Firebase Phone provider enabled hai tan Authentication → Settings → SMS region policy vich India allow karo.');
+      else if(code==='auth/unauthorized-domain') errbox('Eh website domain Firebase Authorized domains vich add nahi hai.');
+      else if(code==='auth/quota-exceeded') errbox('Aj da Firebase SMS quota complete ho gaya.');
+      else errbox((e.message||'OTP send nahi ho saki')+(code?' ['+code+']':''));
     }
   };
   $('#tkVerifyOtp').onclick=async()=>{
