@@ -81,7 +81,12 @@ function show(){
   document.querySelectorAll('[data-back]').forEach(b=>b.onclick=main);
   $('#tkPhoneBtn').onclick=()=>{choices.style.display='none';phonePanel.style.display='block'};
   $('#tkEmailBtn').onclick=()=>{choices.style.display='none';emailPanel.style.display='block'};
-  $('#tkGoogle').onclick=async()=>{try{await window.TK_AUTH.signInWithPopup(new firebase.auth.GoogleAuthProvider())}catch(e){errbox(e.message)}};
+  $('#tkGoogle').onclick=async()=>{try{
+      const provider=new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({prompt:'select_account'});
+      sessionStorage.removeItem('tk_offline');
+      await window.TK_AUTH.signInWithPopup(provider);
+    }catch(e){errbox(e.message)}};
   $('#tkGuest').onclick=()=>{d.remove();removeSplash();legacyGuest()};
 
   $('#tkSignupToggle').onclick=()=>{
@@ -96,6 +101,7 @@ function show(){
       $('#tkAuthErr').style.display='none';
       const email=$('#tkAuthEmail').value.trim(),pass=$('#tkAuthPass').value;
       if(!email||!pass)return errbox('Email te password enter karo.');
+      sessionStorage.removeItem('tk_offline');
       if(emailSignup){
         const cred=await window.TK_AUTH.createUserWithEmailAndPassword(email,pass);
         const name=$('#tkAuthName').value.trim();if(name)await cred.user.updateProfile({displayName:name});
@@ -133,10 +139,57 @@ function show(){
     try{
       const code=$('#tkOtp').value.trim();
       if(!phoneConfirmation||code.length!==6)return errbox('6-digit OTP enter karo.');
+      sessionStorage.removeItem('tk_offline');
       await phoneConfirmation.confirm(code);
     }catch(e){errbox(e.message)}
   };
 }
+function suppressLegacyLogin(){
+  try{
+    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT);
+    const doomed=[];
+    while(walker.nextNode()){
+      const el=walker.currentNode;
+      if(el.id==='tkAuthOverlay'||el.id==='tkBootSplash')continue;
+      const txt=(el.textContent||'').trim();
+      if((txt.includes('v0.2.1')&&txt.includes('Professional mobile dashboard'))||
+         (txt.includes('Friends naal trip karo')&&txt.includes('Continue as Guest'))){
+        let target=el;
+        for(let i=0;i<5&&target.parentElement&&target.parentElement!==document.body;i++){
+          const p=target.parentElement;
+          const ptxt=(p.textContent||'');
+          if(ptxt.includes('Continue as Guest')&&ptxt.includes('v0.2.1')) target=p; else break;
+        }
+        doomed.push(target);
+      }
+    }
+    doomed.forEach(el=>{if(el&&el!==document.body)el.style.display='none'});
+  }catch(e){}
+}
+function showFreshLogin(){
+  suppressLegacyLogin();
+  show();
+  setTimeout(suppressLegacyLogin,0);
+  setTimeout(suppressLegacyLogin,250);
+}
+window.tripKhataLogout=async function(){
+  sessionStorage.removeItem('tk_offline');
+  try{
+    if(typeof state!=='undefined'){
+      state.cloud={enabled:false,provider:null};
+      if(state.user){
+        state.user.loggedIn=false;
+        delete state.user.firebaseUid;
+        delete state.user.provider;
+      }
+      if(typeof save==='function')save();
+    }
+  }catch(e){}
+  try{
+    if(window.TK_AUTH?.currentUser) await window.TK_AUTH.signOut();
+  }catch(e){console.warn('TripKhata sign out',e)}
+  showFreshLogin();
+};
 function badge(){
   try{
     const top=document.querySelector('.topbar,.header,.app-header');
@@ -145,16 +198,12 @@ function badge(){
 }
 window.tripKhataAccount=function(){
   const u=window.TK_AUTH?.currentUser;
-  if(!u)return show();
+  if(!u){
+    sessionStorage.removeItem('tk_offline');
+    return showFreshLogin();
+  }
   if(confirm((u.displayName||u.phoneNumber||u.email||'Account')+'\n\nSign out?')){
-    try{
-      if(typeof state!=='undefined'){
-        state.cloud={enabled:false,provider:null};
-        if(state.user){state.user.loggedIn=false;delete state.user.firebaseUid;delete state.user.provider}
-        if(typeof save==='function')save();
-      }
-    }catch(e){}
-    window.TK_AUTH.signOut();
+    window.tripKhataLogout();
   }
 };
 async function init(){
@@ -165,11 +214,12 @@ async function init(){
     window.TK_AUTH=firebase.auth();
     TK_AUTH.onAuthStateChanged(u=>{
       if(u){
+        sessionStorage.removeItem('tk_offline');
         $('#tkAuthOverlay')?.remove();bindFirebaseUser(u);removeSplash();
         if(window.tripKhataSyncStart)window.tripKhataSyncStart(u);
       }else{
         if(sessionStorage.getItem('tk_offline')){removeSplash();return}
-        show();setTimeout(removeSplash,350);
+        showFreshLogin();setTimeout(removeSplash,350);
       }
     });
   }catch(e){
