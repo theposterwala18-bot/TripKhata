@@ -101,16 +101,72 @@
     return b;
   };
 
-  function enhanceDashboard(){
-    const t=getTrip();if(!t)return;ensure(t);
-    if(!document.getElementById('tkFundCard')){
-      const anchor=document.querySelector('.summary4');
-      if(anchor){
-        const card=document.createElement('div');card.id='tkFundCard';card.className='sectioncard';
-        card.innerHTML=`<div class="sectionhead"><div class="sectionicon">💰</div><div><div class="sectiontitle">Trip Fund</div><div class="sectionsub">Common wallet • ${fmtM(t,fundBalance(t))} remaining</div></div><button class="sectionaction" onclick="openFundDashboard()">Open</button></div><div class="row"><div class="grow"><b>${fmtM(t,fundCollected(t))}</b><div class="muted tiny">Collected</div></div><div class="grow"><b>${fmtM(t,fundSpent(t))}</b><div class="muted tiny">Spent</div></div><button class="btn soft" onclick="openFundContribution()">+ Contribution</button><button class="btn primary" onclick="openFundExpense()">Pay from Fund</button></div>`;
-        anchor.after(card);
+  function ensureFundCardStyle(){
+    if(document.getElementById('tkFundCardStyle'))return;
+    const s=document.createElement('style');s.id='tkFundCardStyle';s.textContent=`
+      #tkFundCard.tkFundPro{margin-top:14px;padding:16px;border:1px solid #e4eaf3;border-radius:20px;background:#fff;box-shadow:0 10px 28px rgba(28,58,96,.08)}
+      #tkFundCard .tkFundTop{display:flex;align-items:flex-start;gap:12px}
+      #tkFundCard .tkFundIcon{display:grid;place-items:center;flex:0 0 48px;width:48px;height:48px;border-radius:15px;background:#edf5ff;font-size:25px}
+      #tkFundCard .tkFundHead{min-width:0;flex:1}
+      #tkFundCard .tkFundTitle{font-size:18px;font-weight:900;color:#14213d;line-height:1.15}
+      #tkFundCard .tkFundSub{margin-top:3px;font-size:12px;font-weight:700;color:#7a879c}
+      #tkFundCard .tkFundReport{border:0;border-radius:12px;background:#edf5ff;color:#1673e6;padding:10px 12px;font-size:12px;font-weight:900;white-space:nowrap}
+      #tkFundCard .tkFundBalanceRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:15px}
+      #tkFundCard .tkFundBalanceLabel{font-size:12px;font-weight:800;color:#718096}
+      #tkFundCard .tkFundLive{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:999px;background:#dcf7e7;color:#079447;font-size:10px;font-weight:900}
+      #tkFundCard .tkFundLiveDot{width:7px;height:7px;border-radius:50%;background:#10b759}
+      #tkFundCard .tkFundBalance{margin-top:2px;font-size:30px;font-weight:950;letter-spacing:-.6px;color:#0f1f46;line-height:1.05}
+      #tkFundCard .tkFundRemaining{margin-left:5px;font-size:13px;font-weight:700;color:#7b879a}
+      #tkFundCard .tkFundBottom{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.1fr) minmax(0,.9fr) auto auto;gap:9px;align-items:stretch;margin-top:15px}
+      #tkFundCard .tkFundStat{display:flex;align-items:center;gap:8px;min-width:0;padding:10px;border-radius:13px;background:#f7f9fc}
+      #tkFundCard .tkFundStat.green{background:#f0fbf5}
+      #tkFundCard .tkFundStat.red{background:#fff5f5}
+      #tkFundCard .tkFundStat.blue{background:#f2f7ff}
+      #tkFundCard .tkFundStatIcon{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:#fff;font-size:15px}
+      #tkFundCard .tkFundStatLabel{font-size:9px;font-weight:800;color:#7a879a;line-height:1.1}
+      #tkFundCard .tkFundStatValue{margin-top:2px;font-size:13px;font-weight:950;color:#14213d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      #tkFundCard .tkFundAction{min-height:50px;border-radius:13px;padding:10px 13px;font-size:12px;font-weight:900;white-space:nowrap}
+      #tkFundCard .tkFundContribution{border:1px solid #d9e2ee;background:#fff;color:#14213d}
+      #tkFundCard .tkFundPay{border:1px solid #2481ff;background:#2481ff;color:#fff;box-shadow:0 8px 18px rgba(36,129,255,.18)}
+      @media(max-width:620px){
+        #tkFundCard.tkFundPro{padding:14px;border-radius:18px}
+        #tkFundCard .tkFundReport{padding:9px 10px;font-size:11px}
+        #tkFundCard .tkFundBottom{grid-template-columns:repeat(3,minmax(0,1fr))}
+        #tkFundCard .tkFundStat{padding:9px 8px}
+        #tkFundCard .tkFundStatIcon{display:none}
+        #tkFundCard .tkFundAction{grid-column:span 3}
+        #tkFundCard .tkFundContribution,#tkFundCard .tkFundPay{width:100%}
       }
+    `;document.head.appendChild(s);
+  }
+  function renderFundCard(card,t){
+    const col=fundCollected(t),spent=fundSpent(t),bal=fundBalance(t),members=activeMembers(t).length;
+    card.className='sectioncard tkFundPro';
+    card.innerHTML=`<div class="tkFundTop">
+      <div class="tkFundIcon">💰</div>
+      <div class="tkFundHead"><div class="tkFundTitle">Trip Fund</div><div class="tkFundSub">Common wallet</div></div>
+      <button class="tkFundReport" onclick="openFundDashboard()">📊 Wallet Report ›</button>
+    </div>
+    <div class="tkFundBalanceRow"><span class="tkFundBalanceLabel">Current Balance</span><span class="tkFundLive"><span class="tkFundLiveDot"></span>Live</span></div>
+    <div><span class="tkFundBalance">${fmtM(t,bal)}</span><span class="tkFundRemaining">remaining</span></div>
+    <div class="tkFundBottom">
+      <div class="tkFundStat green"><span class="tkFundStatIcon">↓</span><div><div class="tkFundStatLabel">Collected</div><div class="tkFundStatValue">${fmtM(t,col)}</div></div></div>
+      <div class="tkFundStat red"><span class="tkFundStatIcon">↑</span><div><div class="tkFundStatLabel">Spent</div><div class="tkFundStatValue">${fmtM(t,spent)}</div></div></div>
+      <div class="tkFundStat blue"><span class="tkFundStatIcon">👥</span><div><div class="tkFundStatLabel">Members</div><div class="tkFundStatValue">${members}</div></div></div>
+      <button class="tkFundAction tkFundContribution" onclick="openFundContribution()">＋ Contribution</button>
+      <button class="tkFundAction tkFundPay" onclick="openFundExpense()">▣ Pay from Fund</button>
+    </div>`;
+  }
+  function enhanceDashboard(){
+    const t=getTrip();if(!t)return;ensure(t);ensureFundCardStyle();
+    let card=document.getElementById('tkFundCard');
+    if(!card){
+      const anchor=document.querySelector('.summary4');
+      if(!anchor)return;
+      card=document.createElement('div');card.id='tkFundCard';
+      anchor.after(card);
     }
+    renderFundCard(card,t);
   }
 
   const oldTrip=window.renderTrip;
