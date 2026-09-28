@@ -1,3 +1,3 @@
-window.TRIPKHATA_VERSION='1.0.5';
-window.TRIPKHATA_BUILD='2026-09-27';
+window.TRIPKHATA_VERSION='1.0.6';
+window.TRIPKHATA_BUILD='2026-09-28';
 document.title='TripKhata v'+window.TRIPKHATA_VERSION;
