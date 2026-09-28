@@ -128,14 +128,29 @@
       #tkFundCard .tkFundAction{min-height:50px;border-radius:13px;padding:10px 13px;font-size:12px;font-weight:900;white-space:nowrap}
       #tkFundCard .tkFundContribution{border:1px solid #d9e2ee;background:#fff;color:#14213d}
       #tkFundCard .tkFundPay{border:1px solid #2481ff;background:#2481ff;color:#fff;box-shadow:0 8px 18px rgba(36,129,255,.18)}
-      @media(max-width:620px){
+      @media(max-width:900px){
         #tkFundCard.tkFundPro{padding:14px;border-radius:18px}
         #tkFundCard .tkFundReport{padding:9px 10px;font-size:11px}
-        #tkFundCard .tkFundBottom{grid-template-columns:repeat(3,minmax(0,1fr))}
+        #tkFundCard .tkFundBottom{
+          grid-template-columns:repeat(3,minmax(0,1fr));
+          gap:8px
+        }
         #tkFundCard .tkFundStat{padding:9px 8px}
         #tkFundCard .tkFundStatIcon{display:none}
-        #tkFundCard .tkFundAction{grid-column:span 3}
-        #tkFundCard .tkFundContribution,#tkFundCard .tkFundPay{width:100%}
+        #tkFundCard .tkFundAction{
+          min-height:42px;
+          width:100%;
+          padding:8px 10px;
+          border-radius:12px;
+          font-size:11px
+        }
+        #tkFundCard .tkFundContribution{
+          grid-column:1 / span 3;
+          margin-top:2px
+        }
+        #tkFundCard .tkFundPay{
+          grid-column:1 / span 3
+        }
       }
     `;document.head.appendChild(s);
   }
