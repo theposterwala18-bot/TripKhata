@@ -117,7 +117,7 @@
       #tkFundCard .tkFundLiveDot{width:7px;height:7px;border-radius:50%;background:#10b759}
       #tkFundCard .tkFundBalance{margin-top:2px;font-size:30px;font-weight:950;letter-spacing:-.6px;color:#0f1f46;line-height:1.05}
       #tkFundCard .tkFundRemaining{margin-left:5px;font-size:13px;font-weight:700;color:#7b879a}
-      #tkFundCard .tkFundBottom{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.1fr) minmax(0,.9fr) auto auto;gap:9px;align-items:stretch;margin-top:15px}
+      #tkFundCard .tkFundBottom{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;align-items:stretch;margin-top:15px}
       #tkFundCard .tkFundStat{display:flex;align-items:center;gap:8px;min-width:0;padding:10px;border-radius:13px;background:#f7f9fc}
       #tkFundCard .tkFundStat.green{background:#f0fbf5}
       #tkFundCard .tkFundStat.red{background:#fff5f5}
@@ -126,8 +126,8 @@
       #tkFundCard .tkFundStatLabel{font-size:9px;font-weight:800;color:#7a879a;line-height:1.1}
       #tkFundCard .tkFundStatValue{margin-top:2px;font-size:13px;font-weight:950;color:#14213d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       #tkFundCard .tkFundAction{min-height:50px;border-radius:13px;padding:10px 13px;font-size:12px;font-weight:900;white-space:nowrap}
-      #tkFundCard .tkFundContribution{border:1px solid #d9e2ee;background:#fff;color:#14213d}
-      #tkFundCard .tkFundPay{border:1px solid #2481ff;background:#2481ff;color:#fff;box-shadow:0 8px 18px rgba(36,129,255,.18)}
+      #tkFundCard .tkFundContribution{grid-column:1 / span 3;border:1px solid #d9e2ee;background:#fff;color:#14213d}
+      #tkFundCard .tkFundPay{grid-column:1 / span 3;border:1px solid #2481ff;background:#2481ff;color:#fff;box-shadow:0 8px 18px rgba(36,129,255,.18)}
       @media(max-width:900px){
         #tkFundCard.tkFundPro{padding:14px;border-radius:18px}
         #tkFundCard .tkFundReport{padding:9px 10px;font-size:11px}
@@ -144,13 +144,7 @@
           border-radius:12px;
           font-size:11px
         }
-        #tkFundCard .tkFundContribution{
-          grid-column:1 / span 3;
-          margin-top:2px
-        }
-        #tkFundCard .tkFundPay{
-          grid-column:1 / span 3
-        }
+        #tkFundCard .tkFundContribution{margin-top:2px}
       }
     `;document.head.appendChild(s);
   }
