@@ -132,7 +132,7 @@
     $('#tkProfileHowShared').onclick=()=>alert('1. Owner opens a trip and taps Share / Manage Trip.\n2. Invite code/link friend nu send karo.\n3. Friend apne TripKhata account te invite code enter karke Join kare.\n4. Realtime sync start ho ju.');
     $('#tkProfileJoinTrip').onclick=()=>{const code=$('#tkProfileJoinCode').value.trim();if(!code)return alert('Invite code enter karo.');d.remove();window.tripKhataJoinSharedTrip?.(code)};
     $('#tkProfileJoinCode').onkeydown=e=>{if(e.key==='Enter')$('#tkProfileJoinTrip').click()};
-    $('#tkSignOut').onclick=()=>{d.remove();window.tripKhataAccount?.()};
+    $('#tkSignOut').onclick=()=>{d.remove();if(window.tripKhataLogout)window.tripKhataLogout();else window.tripKhataAccount?.()};
     if(owner){
       $('#tkOwnerSync').onclick=()=>window.tripKhataSyncNow?.();
       $('#tkOwnerInfo').onclick=async()=>{const info='TripKhata v'+(window.TRIPKHATA_VERSION||'')+' | '+(window.TRIPKHATA_CLOUD?.status||'unknown')+' | '+location.href;try{await navigator.clipboard.writeText(info);alert('App info copied.')}catch(e){alert(info)}};
