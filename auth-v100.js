@@ -34,16 +34,21 @@ function bindFirebaseUser(u){
 }
 function legacyGuest(){
   sessionStorage.setItem('tk_offline','1');
-  const btn=[...document.querySelectorAll('button')].find(b=>/continue as guest/i.test((b.textContent||'').trim()));
-  if(btn){try{btn.click();return}catch(e){}}
   try{
     if(typeof state!=='undefined'){
-      state.user=Object.assign({},state.user||{},{name:state.user?.name||'Guest',loggedIn:false});
+      state.user=Object.assign({},state.user||{},{
+        name:state.user?.name||'Guest',
+        email:'',
+        loggedIn:false
+      });
+      delete state.user.firebaseUid;
+      delete state.user.provider;
       state.cloud={enabled:false,provider:null};
       if(typeof save==='function')save();
-      if(typeof renderAll==='function')renderAll();
     }
-  }catch(e){}
+  }catch(e){console.warn('TripKhata guest state',e)}
+  try{if(typeof renderAll==='function')renderAll()}catch(e){console.warn('TripKhata guest render',e)}
+  removeSplash();
 }
 function baseShell(){
   return '<div class="tk100authcard">'+
@@ -87,7 +92,7 @@ function show(){
       sessionStorage.removeItem('tk_offline');
       await window.TK_AUTH.signInWithPopup(provider);
     }catch(e){errbox(e.message)}};
-  $('#tkGuest').onclick=()=>{d.remove();removeSplash();legacyGuest()};
+  $('#tkGuest').onclick=()=>{d.remove();legacyGuest();setTimeout(()=>{try{if(typeof renderAll==='function')renderAll()}catch(e){}},60)};
 
   $('#tkSignupToggle').onclick=()=>{
     emailSignup=!emailSignup;
@@ -144,33 +149,10 @@ function show(){
     }catch(e){errbox(e.message)}
   };
 }
-function suppressLegacyLogin(){
-  try{
-    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT);
-    const doomed=[];
-    while(walker.nextNode()){
-      const el=walker.currentNode;
-      if(el.id==='tkAuthOverlay'||el.id==='tkBootSplash')continue;
-      const txt=(el.textContent||'').trim();
-      if((txt.includes('v0.2.1')&&txt.includes('Professional mobile dashboard'))||
-         (txt.includes('Friends naal trip karo')&&txt.includes('Continue as Guest'))){
-        let target=el;
-        for(let i=0;i<5&&target.parentElement&&target.parentElement!==document.body;i++){
-          const p=target.parentElement;
-          const ptxt=(p.textContent||'');
-          if(ptxt.includes('Continue as Guest')&&ptxt.includes('v0.2.1')) target=p; else break;
-        }
-        doomed.push(target);
-      }
-    }
-    doomed.forEach(el=>{if(el&&el!==document.body)el.style.display='none'});
-  }catch(e){}
-}
 function showFreshLogin(){
-  suppressLegacyLogin();
+  $('#tkAuthOverlay')?.remove();
   show();
-  setTimeout(suppressLegacyLogin,0);
-  setTimeout(suppressLegacyLogin,250);
+  removeSplash();
 }
 window.tripKhataLogout=async function(){
   sessionStorage.removeItem('tk_offline');
@@ -215,7 +197,11 @@ async function init(){
     TK_AUTH.onAuthStateChanged(u=>{
       if(u){
         sessionStorage.removeItem('tk_offline');
-        $('#tkAuthOverlay')?.remove();bindFirebaseUser(u);removeSplash();
+        $('#tkAuthOverlay')?.remove();
+        bindFirebaseUser(u);
+        removeSplash();
+        try{if(typeof renderAll==='function')renderAll()}catch(e){}
+        setTimeout(()=>{try{if(typeof renderAll==='function')renderAll()}catch(e){}},80);
         if(window.tripKhataSyncStart)window.tripKhataSyncStart(u);
       }else{
         if(sessionStorage.getItem('tk_offline')){removeSplash();return}
