@@ -30,7 +30,7 @@ public class MainActivity extends Activity {
         s.setAllowFileAccess(true);
         s.setAllowContentAccess(true);
         s.setMediaPlaybackRequiresUserGesture(false);
-        s.setUserAgentString(s.getUserAgentString() + " TripKhataAndroid/0.7.3");
+        s.setUserAgentString(s.getUserAgentString() + " TripKhataAndroid/1.0.10-test");
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
