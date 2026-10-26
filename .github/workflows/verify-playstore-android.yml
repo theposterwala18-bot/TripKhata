@@ -47,7 +47,7 @@ jobs:
 
       - name: Compile release AAB
         working-directory: android-wrapper
-        run: gradle bundleRelease --stacktrace
+        run: gradle clean bundleRelease --stacktrace --no-daemon
 
       - name: Upload unsigned verification bundle
         uses: actions/upload-artifact@v4
