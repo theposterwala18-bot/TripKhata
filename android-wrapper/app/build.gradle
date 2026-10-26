@@ -2,14 +2,14 @@ plugins { id 'com.android.application' }
 
 android {
     namespace 'com.theposterwala.tripkhata'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId 'com.theposterwala.tripkhata'
         minSdk 24
-        targetSdk 35
+        targetSdk 36
         versionCode 1010
-        versionName '1.0.10-test'
+        versionName '1.0.10'
     }
 
     buildTypes {
