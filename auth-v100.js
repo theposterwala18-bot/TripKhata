@@ -3,6 +3,7 @@
 'use strict';
 const FBASE='https://www.gstatic.com/firebasejs/10.14.1/';
 const $=s=>document.querySelector(s);
+const APP_ICON='./icons/tripkhata-app-icon.png?v=111';
 function load(src){return new Promise((ok,fail)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=fail;document.head.appendChild(s)})}
 async function sdk(){
   if(!window.firebase){
@@ -49,10 +50,23 @@ function legacyGuest(){
   }catch(e){console.warn('TripKhata guest state',e)}
   try{if(typeof renderAll==='function')renderAll()}catch(e){console.warn('TripKhata guest render',e)}
   removeSplash();
+
+  // The old base app still contains its own legacy welcome/login screen.
+  // When the new v1 auth chooses Guest, pass straight through that legacy gate
+  // so the user lands on the TripKhata dashboard instead of seeing v0.2.1.
+  const passLegacyGuest=()=>{
+    try{
+      const buttons=[...document.querySelectorAll('button')];
+      const oldGuest=buttons.find(b=>b.id!=='tkGuest' && /^Continue as Guest$/i.test((b.textContent||'').trim()));
+      if(oldGuest){ oldGuest.click(); return true; }
+    }catch(e){console.warn('legacy guest bypass',e)}
+    return false;
+  };
+  [40,180,500,1000].forEach(ms=>setTimeout(passLegacyGuest,ms));
 }
 function baseShell(){
   return '<div class="tk100authcard">'+
-    '<div class="tk100brand"><img src="./icons/tripkhata-app-icon.png" alt=""><div><h1>TripKhata</h1><p>Friends • Trips • Hisab</p></div></div>'+
+    '<div class="tk100brand"><img src="'+APP_ICON+'" alt="TripKhata"><div><h1>TripKhata</h1><p>Friends • Trips • Hisab</p></div></div>'+
     '<div id="tkAuthErr" class="tk100err"></div>'+
     '<div id="tk100choices">'+
       '<button id="tkPhoneBtn" class="tk100primary" style="display:none">📱 Continue with Mobile OTP</button>'+
