@@ -7,6 +7,8 @@ on:
       - 'android-wrapper/**'
       - 'auth-v100.js'
       - '.github/workflows/verify-playstore-android.yml'
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
