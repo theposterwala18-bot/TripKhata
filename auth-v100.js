@@ -87,9 +87,13 @@ function show(){
   $('#tkPhoneBtn').onclick=()=>{choices.style.display='none';phonePanel.style.display='block'};
   $('#tkEmailBtn').onclick=()=>{choices.style.display='none';emailPanel.style.display='block'};
   $('#tkGoogle').onclick=async()=>{try{
+      sessionStorage.removeItem('tk_offline');
+      if(window.TripKhataAndroid && typeof window.TripKhataAndroid.signInWithGoogle==='function'){
+        window.TripKhataAndroid.signInWithGoogle();
+        return;
+      }
       const provider=new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({prompt:'select_account'});
-      sessionStorage.removeItem('tk_offline');
       await window.TK_AUTH.signInWithPopup(provider);
     }catch(e){errbox(e.message)}};
   $('#tkGuest').onclick=()=>{d.remove();legacyGuest();setTimeout(()=>{try{if(typeof renderAll==='function')renderAll()}catch(e){}},60)};
@@ -154,6 +158,22 @@ function showFreshLogin(){
   show();
   removeSplash();
 }
+
+window.tripKhataNativeGoogleToken=async function(idToken){
+  try{
+    if(!window.TK_AUTH) throw new Error('Firebase Auth not ready.');
+    sessionStorage.removeItem('tk_offline');
+    const credential=firebase.auth.GoogleAuthProvider.credential(idToken);
+    await window.TK_AUTH.signInWithCredential(credential);
+  }catch(e){
+    console.error('Native Google sign-in',e);
+    errbox(e.message||'Google login failed.');
+  }
+};
+window.tripKhataNativeGoogleError=function(message){
+  errbox(message||'Google login cancelled or failed.');
+};
+
 window.tripKhataLogout=async function(){
   sessionStorage.removeItem('tk_offline');
   try{
