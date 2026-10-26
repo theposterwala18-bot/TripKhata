@@ -1,0 +1,48 @@
+name: Verify TripKhata Play Store Android Build
+
+on:
+  push:
+    branches: [ playstore-release-v1.0.10 ]
+    paths:
+      - 'android-wrapper/**'
+      - 'auth-v100.js'
+      - '.github/workflows/verify-playstore-android.yml'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Android SDK 36
+        shell: bash
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.7
+
+      - name: Compile debug APK
+        working-directory: android-wrapper
+        run: gradle assembleDebug --stacktrace
+
+      - name: Compile release AAB
+        working-directory: android-wrapper
+        run: gradle bundleRelease --stacktrace
+
+      - name: Upload unsigned verification bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: TripKhata-v1.0.10-unsigned-verification
+          path: android-wrapper/app/build/outputs/bundle/release/app-release.aab
