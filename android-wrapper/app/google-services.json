@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "812954675254",
+    "project_id": "tripkhata-a5b27",
+    "storage_bucket": "tripkhata-a5b27.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:812954675254:android:d3eb99cd93ed6a4da41097",
+        "android_client_info": {
+          "package_name": "com.theposterwala.tripkhata"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "812954675254-e6l2j7evpe50iq38h3cse42vfk1i8ung.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBzrEscgTsHuhh6wDlJt37ywflvLfl59B4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "812954675254-e6l2j7evpe50iq38h3cse42vfk1i8ung.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
