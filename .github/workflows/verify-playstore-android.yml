@@ -45,6 +45,16 @@ jobs:
           name: TripKhata-v1.0.10-final-icon-test-apk
           path: android-wrapper/app/build/outputs/apk/debug/app-debug.apk
 
+      - name: Compile release APK
+        working-directory: android-wrapper
+        run: gradle clean assembleRelease --stacktrace --no-daemon
+
+      - name: Upload unsigned release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TripKhata-v1.0.10-unsigned-release-apk
+          path: android-wrapper/app/build/outputs/apk/release/app-release-unsigned.apk
+
       - name: Compile release AAB
         working-directory: android-wrapper
         run: gradle clean bundleRelease --stacktrace --no-daemon
