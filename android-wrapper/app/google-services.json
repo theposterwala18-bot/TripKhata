@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "812954675254-2ltie1g3t38nl3v04bgv1f7cbetboii5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.theposterwala.tripkhata",
+            "certificate_hash": "13652c10858fa00bf3cbaad04ab3ba0623d767fa"
+          }
+        },
+        {
           "client_id": "812954675254-e6l2j7evpe50iq38h3cse42vfk1i8ung.apps.googleusercontent.com",
           "client_type": 3
         }
