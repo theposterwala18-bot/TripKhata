@@ -5,7 +5,8 @@
         android:label="TripKhata"
         android:theme="@style/Theme.TripKhata"
         android:usesCleartextTraffic="false"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round">
         <activity
             android:name=".MainActivity"
             android:exported="true"
