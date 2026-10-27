@@ -149,8 +149,43 @@
     $('#tkSettingsProfile').onclick=openProfile;$('#tkSettingsSync').onclick=()=>window.tripKhataSyncNow?.();
   }
 
+
+  function polishMyTrips(){
+    try{
+      const title=[...document.querySelectorAll('*')].find(el=>el.children.length===0&&(el.textContent||'').trim()==='My Trips');
+      if(!title)return;
+      let card=title.closest('.card');
+      if(!card){
+        card=title.parentElement;
+        for(let i=0;i<4&&card;i++,card=card.parentElement){
+          const tx=(card.textContent||'');
+          if(tx.includes('My Trips')&&(tx.includes('+ New')||tx.includes('No trips yet')))break;
+        }
+      }
+      if(!card)return;
+      card.classList.add('tkMyTripsCard');
+      const btn=[...card.querySelectorAll('button')].find(b=>/\+\s*New/i.test((b.textContent||'').trim())||/Create Trip/i.test((b.textContent||'').trim()));
+      if(btn){
+        btn.textContent='＋ Create Trip';
+        btn.classList.add('tkCreateTripBtn');
+        btn.setAttribute('aria-label','Create a new trip');
+      }
+      const empty=[...card.querySelectorAll('*')].find(el=>el.children.length===0&&/No trips yet/i.test((el.textContent||'')));
+      if(empty){
+        empty.innerHTML='<b>Start here 👇</b><br>Create your first trip, add friends, then record expenses.';
+        empty.classList.add('tkTripEmptyHelp');
+      }
+      if(empty&&!card.querySelector('.tkTripStartLabel')){
+        const hint=document.createElement('div');
+        hint.className='tkTripStartLabel';
+        hint.textContent='Your trips will appear here';
+        title.insertAdjacentElement('afterend',hint);
+      }
+    }catch(e){console.warn('polishMyTrips',e)}
+  }
+
   function polish(){
-    stableHeader();settingsCard();
+    stableHeader();settingsCard();polishMyTrips();
     const bar=$('#tkServiceBar');if(bar)bar.classList.add('tkFinalServiceBar');
   }
 
@@ -161,6 +196,11 @@
     .tkCloudIcon{font-size:13px}.tkProfileBtn{width:38px!important;min-width:38px!important;height:38px!important;border-radius:50%!important;padding:0!important;overflow:hidden!important;background:#eef3ff!important;color:#4f46a5!important;font-weight:900!important}
     .tkProfileBtn img,.tkBigAvatar img{width:100%;height:100%;object-fit:cover}
     .tkFinalServiceBar{top:72px!important}
+    .tkMyTripsCard{border:1px solid #d9e6f8!important;border-radius:18px!important;padding:15px!important;background:linear-gradient(180deg,#fff,#f8fbff)!important;box-shadow:0 8px 24px #1d4f9110!important}
+    .tkCreateTripBtn{background:#1677ff!important;color:#fff!important;border:0!important;border-radius:11px!important;padding:9px 13px!important;font-weight:900!important;box-shadow:0 6px 14px #1677ff25!important}
+    .tkTripStartLabel{font-size:11px;color:#72839c;margin-top:2px;font-weight:700}
+    .tkTripEmptyHelp{display:block!important;margin-top:13px!important;padding:12px!important;border:1px dashed #bfd5f2!important;border-radius:12px!important;background:#f4f9ff!important;color:#52657f!important;line-height:1.45!important;font-size:12px!important}
+    .tkTripEmptyHelp b{color:#17345f!important;font-size:13px!important}
     .tkModalShade{position:fixed;inset:0;z-index:3000;background:#10244499;display:flex;align-items:flex-end;justify-content:center;padding:0}
     .tkProfileSheet{background:#fff;width:min(560px,100%);max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;padding:16px 18px 24px;box-shadow:0 -20px 60px #0003}
     .tkSheetHandle{width:48px;height:5px;border-radius:10px;background:#d5dce6;margin:0 auto 14px}.tkSheetTop{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.tkSheetTop button{border:0;background:#f1f4f8;border-radius:10px;padding:8px}.tkSheetTitle{font-size:23px;font-weight:900;color:#13284b}.tkSheetSub,.tkMuted{font-size:12px;color:#738198;margin-top:3px}

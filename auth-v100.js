@@ -15,8 +15,27 @@ async function sdk(){
 }
 function removeSplash(){
   const s=$('#tkBootSplash');if(!s)return;
-  s.style.opacity='0';setTimeout(()=>s.remove(),220);
+  s.style.opacity='0';setTimeout(()=>s.remove(),120);
 }
+function suppressLegacyLogin(){
+  try{
+    const nodes=[...document.querySelectorAll('div,section,main')].filter(el=>{
+      if(el.id==='tkAuthOverlay')return false;
+      const t=(el.textContent||'').replace(/\s+/g,' ').trim();
+      return t.includes('v0.2.1') && t.includes('Continue as Guest') && t.includes('TripKhata');
+    }).sort((a,b)=>(a.textContent||'').length-(b.textContent||'').length);
+    const legacy=nodes[0];
+    if(legacy){
+      legacy.dataset.tkLegacyLogin='hidden';
+      legacy.style.setProperty('display','none','important');
+      legacy.setAttribute('aria-hidden','true');
+      return true;
+    }
+  }catch(e){console.warn('suppressLegacyLogin',e)}
+  return false;
+}
+const legacyObserver=new MutationObserver(()=>suppressLegacyLogin());
+legacyObserver.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
 function errbox(msg){
   const e=$('#tkAuthErr');if(e){e.style.display='block';e.textContent=String(msg||'Error').replace('Firebase: ','')}
 }
@@ -51,18 +70,17 @@ function legacyGuest(){
   try{if(typeof renderAll==='function')renderAll()}catch(e){console.warn('TripKhata guest render',e)}
   removeSplash();
 
-  // The old base app still contains its own legacy welcome/login screen.
-  // When the new v1 auth chooses Guest, pass straight through that legacy gate
-  // so the user lands on the TripKhata dashboard instead of seeing v0.2.1.
+  // Permanently suppress the retired v0.2.1 login and enter the current dashboard.
+  suppressLegacyLogin();
   const passLegacyGuest=()=>{
     try{
       const buttons=[...document.querySelectorAll('button')];
       const oldGuest=buttons.find(b=>b.id!=='tkGuest' && /^Continue as Guest$/i.test((b.textContent||'').trim()));
-      if(oldGuest){ oldGuest.click(); return true; }
+      if(oldGuest){ oldGuest.click(); suppressLegacyLogin(); return true; }
     }catch(e){console.warn('legacy guest bypass',e)}
     return false;
   };
-  [40,180,500,1000].forEach(ms=>setTimeout(passLegacyGuest,ms));
+  [0,40,120,300].forEach(ms=>setTimeout(passLegacyGuest,ms));
 }
 function baseShell(){
   return '<div class="tk100authcard">'+
@@ -92,6 +110,8 @@ function baseShell(){
   '</div>';
 }
 function show(){
+  removeSplash();
+  suppressLegacyLogin();
   $('#tkAuthOverlay')?.remove();
   const d=document.createElement('div');d.id='tkAuthOverlay';d.innerHTML=baseShell();document.body.appendChild(d);
   let emailSignup=false,phoneConfirmation=null,recaptcha=null;
@@ -231,6 +251,7 @@ async function init(){
     TK_AUTH.onAuthStateChanged(u=>{
       if(u){
         sessionStorage.removeItem('tk_offline');
+        suppressLegacyLogin();
         $('#tkAuthOverlay')?.remove();
         bindFirebaseUser(u);
         removeSplash();
@@ -238,6 +259,7 @@ async function init(){
         setTimeout(()=>{try{if(typeof renderAll==='function')renderAll()}catch(e){}},80);
         if(window.tripKhataSyncStart)window.tripKhataSyncStart(u);
       }else{
+        suppressLegacyLogin();
         if(sessionStorage.getItem('tk_offline')){removeSplash();return}
         showFreshLogin();setTimeout(removeSplash,350);
       }
@@ -252,7 +274,7 @@ const st=document.createElement('style');
 st.textContent=`
 #tkAuthOverlay{position:fixed;inset:0;z-index:6000;background:#f7f9ff;display:grid;place-items:center;padding:18px;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .tk100authcard{width:min(420px,100%);background:#fff;border:1px solid #e4eaf2;border-radius:24px;padding:24px;box-sizing:border-box;box-shadow:0 18px 60px #17325d18}
-.tk100brand{display:flex;align-items:center;gap:13px;margin-bottom:20px}.tk100brand img{width:58px;height:58px;border-radius:16px}.tk100brand h1{margin:0;color:#111827;font-size:28px}.tk100brand p{margin:3px 0 0;color:#718096;font-size:12px}
+.tk100brand{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;margin-bottom:22px}.tk100brand img{width:88px;height:88px;border-radius:22px;object-fit:contain;display:block}.tk100brand h1{margin:0;color:#111827;font-size:29px}.tk100brand p{margin:2px 0 0;color:#718096;font-size:12px}
 .tk100btn,.tk100primary,.tk100guest{width:100%;padding:13px 14px;border-radius:12px;font-weight:850;font-size:14px;margin-top:9px}
 .tk100btn{border:1px solid #d7e0ec;background:#fff;color:#17243a}.tk100primary{border:0;background:#2481ff;color:#fff}.tk100guest{border:0;background:#f2f5f9;color:#4d5d73}
 .tk100panel h2{margin:8px 0 3px;font-size:20px}.tk100panel p{margin:0 0 12px;color:#78869a;font-size:12px}.tk100panel input{width:100%;box-sizing:border-box;margin-top:9px;padding:12px;border:1px solid #d7e0ec;border-radius:11px;font-size:14px}

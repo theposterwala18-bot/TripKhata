@@ -15,8 +15,24 @@ android {
         versionName '1.0.10'
     }
 
+    signingConfigs {
+        testDebug {
+            storeFile file('tripkhata-test-debug.keystore')
+            storePassword 'tripkhata123'
+            keyAlias 'tripkhata_test'
+            keyPassword 'tripkhata123'
+            enableV1Signing true
+            enableV2Signing true
+            enableV3Signing true
+            enableV4Signing true
+        }
+    }
+
     buildTypes {
-        debug { minifyEnabled false }
+        debug {
+            minifyEnabled false
+            signingConfig signingConfigs.testDebug
+        }
         release { minifyEnabled false }
     }
 
