@@ -1,0 +1,26 @@
+name: Extract TripKhata Base HTML
+
+on:
+  push:
+    branches: [ fix-cloud-startup-v1010 ]
+  workflow_dispatch:
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract embedded base HTML
+        shell: python
+        run: |
+          import re,base64,gzip,pathlib
+          p=pathlib.Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          m=re.search(r'atob\("([A-Za-z0-9+/=]+)"\)',s)
+          if not m: raise SystemExit('embedded html not found')
+          html=gzip.decompress(base64.b64decode(m.group(1))).decode('utf-8')
+          pathlib.Path('base-extracted.html').write_text(html,encoding='utf-8')
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tripkhata-base-extracted
+          path: base-extracted.html
