@@ -59,31 +59,24 @@ function legacyGuest(){
   sessionStorage.setItem('tk_offline','1');
   try{
     if(typeof state!=='undefined'){
-      state.user=Object.assign({},state.user||{},{
-        name:state.user?.name||'Guest',
+      state.user={
+        id:state.user?.id||('guest_'+Date.now()),
+        name:'Guest',
         email:'',
+        guest:true,
         loggedIn:false
-      });
-      delete state.user.firebaseUid;
-      delete state.user.provider;
+      };
       state.cloud={enabled:false,provider:null};
       if(typeof save==='function')save();
     }
+    const main=document.getElementById('mainView');
+    if(main)main.classList.remove('hidden');
+    if(typeof renderAll==='function')renderAll();
+    if(typeof showPage==='function')showPage(state?.active?'trip':'home');
+    window.TRIPKHATA_AUTH_READY=true;
+    try{window.dispatchEvent(new Event('tripkhata-auth-ready'))}catch(e){}
   }catch(e){console.warn('TripKhata guest state',e)}
-  try{if(typeof renderAll==='function')renderAll()}catch(e){console.warn('TripKhata guest render',e)}
-  removeSplash();
-
-  // Permanently suppress the retired v0.2.1 login and enter the current dashboard.
-  suppressLegacyLogin();
-  const passLegacyGuest=()=>{
-    try{
-      const buttons=[...document.querySelectorAll('button')];
-      const oldGuest=buttons.find(b=>b.id!=='tkGuest' && /^Continue as Guest$/i.test((b.textContent||'').trim()));
-      if(oldGuest){ oldGuest.click(); suppressLegacyLogin(); return true; }
-    }catch(e){console.warn('legacy guest bypass',e)}
-    return false;
-  };
-  [0,40,120,300].forEach(ms=>setTimeout(passLegacyGuest,ms));
+  setTimeout(removeSplash,120);
 }
 function baseShell(){
   return '<div class="tk100authcard">'+
