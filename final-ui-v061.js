@@ -214,7 +214,13 @@
   // Wrap real renders once; no polling.
   ['renderAll','renderTrip','renderSettings'].forEach(k=>{const old=window[k];if(typeof old==='function'&&!old.__tkFinal){const w=function(){const r=old.apply(this,arguments);setTimeout(polish,0);return r};w.__tkFinal=true;window[k]=w}});
   window.addEventListener('online',()=>setTimeout(stableHeader,0));window.addEventListener('offline',()=>setTimeout(stableHeader,0));
-  document.addEventListener('DOMContentLoaded',()=>setTimeout(polish,100));
-  setTimeout(polish,300);
-  window.tkFinalPolish=polish;
+  function revealWhenReady(){
+    if(window.TRIPKHATA_AUTH_READY){
+      try{window.tripKhataRevealApp?.()}catch(e){}
+    }
+  }
+  window.addEventListener('tripkhata-auth-ready',()=>setTimeout(()=>{polish();revealWhenReady()},40));
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{polish();revealWhenReady()},100));
+  setTimeout(()=>{polish();revealWhenReady()},300);
+  window.tkFinalPolish=function(){polish();revealWhenReady()};
 })();
