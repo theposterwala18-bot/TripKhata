@@ -1,6 +1,6 @@
-const CACHE='tripkhata-v111';
+const CACHE='tripkhata-v112';
 const ASSETS=[
-  './','./index.html','./manifest.webmanifest','./icons/tripkhata-app-icon.png','./icons/icon-192.png','./icons/tripkhata-app-icon.png?v=111',
+  './','./index.html','./manifest.webmanifest','./icons/tripkhata-app-icon.png','./icons/icon-192.png','./icons/tripkhata-app-icon.webp?v=112',
   './version.js?v=110','./member-v022.js','./settlement-v023.js','./ux-v024.js',
   './ledger-v026.js','./statement-v027.js','./finish-v030.js','./fund-v040.js?v=110',
   './khata-v050.js?v=076','./supplier-v070.js?v=082','./ui-system-v100.js?v=100','./services-v051.js',
