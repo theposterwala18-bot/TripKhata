@@ -66,3 +66,5 @@ jobs:
           path: android-wrapper/app/build/outputs/bundle/release/app-release.aab
 
 # stable test signing refresh
+
+# final serious-app cleanup verification
