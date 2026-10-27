@@ -28,7 +28,7 @@
     // Remove duplicate person/account buttons created by old layers.
     $$('.topbar button.iconbtn').forEach(b=>{
       const id=b.id||'',t=(b.textContent||'').trim(),title=(b.title||'').toLowerCase();
-      if(id==='syncBadge'||id==='tkSyncBadge'||id==='tkProfileBtn')return;
+      if(id==='syncBadge'||id==='tkSyncBadge'||id==='tkRefreshBtn'||id==='tkProfileBtn')return;
       if(t.includes('👤')||title.includes('profile')||title.includes('account'))b.remove();
     });
 
@@ -62,6 +62,22 @@
     const syncText=!navigator.onLine?'Offline':st==='synced'?'Synced':st==='syncing'?'Syncing':st==='choice'?'Choose':'Cloud';
     sync.innerHTML='<span class="tkCloudIcon">☁</span><span>'+syncText+'</span>';
     sync.title='Cloud Sync';
+
+    let refresh=$('#tkRefreshBtn');
+    if(!refresh){
+      refresh=document.createElement('button');
+      refresh.id='tkRefreshBtn';
+      refresh.className='iconbtn tkRefreshBtn';
+      top.appendChild(refresh);
+    }
+    refresh.innerHTML='↻';
+    refresh.title='Refresh dashboard';
+    refresh.setAttribute('aria-label','Refresh dashboard');
+    refresh.onclick=()=>{
+      refresh.classList.add('tkRefreshing');
+      Promise.resolve(window.tripKhataRefreshNow?.()||window.tripKhataSyncNow?.())
+        .finally(()=>setTimeout(()=>refresh.classList.remove('tkRefreshing'),350));
+    };
 
     // One clear profile/avatar button only.
     let pb=$('#tkProfileBtn');
@@ -193,7 +209,7 @@
     .tkFinalTopbar{gap:8px!important;min-height:72px!important;padding:10px 12px!important;align-items:center!important}
     #tkHeaderMeta{display:flex;gap:5px;align-items:center;font-size:9px;color:#7890ad;margin-top:2px;font-weight:700}
     .tkSyncPill{min-width:76px!important;width:auto!important;padding:7px 9px!important;border-radius:12px!important;font-size:10px!important;display:flex!important;gap:5px!important;align-items:center!important;justify-content:center!important;white-space:nowrap}
-    .tkCloudIcon{font-size:13px}.tkProfileBtn{width:38px!important;min-width:38px!important;height:38px!important;border-radius:50%!important;padding:0!important;overflow:hidden!important;background:#eef3ff!important;color:#4f46a5!important;font-weight:900!important}
+    .tkCloudIcon{font-size:13px}.tkRefreshBtn{width:36px!important;min-width:36px!important;height:36px!important;border-radius:12px!important;padding:0!important;font-size:22px!important;line-height:1!important;font-weight:700!important}.tkRefreshBtn.tkRefreshing{animation:tkSpin .7s linear infinite}@keyframes tkSpin{to{transform:rotate(360deg)}}.tkProfileBtn{width:38px!important;min-width:38px!important;height:38px!important;border-radius:50%!important;padding:0!important;overflow:hidden!important;background:#eef3ff!important;color:#4f46a5!important;font-weight:900!important}
     .tkProfileBtn img,.tkBigAvatar img{width:100%;height:100%;object-fit:cover}
     .tkFinalServiceBar{top:72px!important}
     .tkMyTripsCard{border:1px solid #d9e6f8!important;border-radius:18px!important;padding:15px!important;background:linear-gradient(180deg,#fff,#f8fbff)!important;box-shadow:0 8px 24px #1d4f9110!important}
@@ -214,6 +230,7 @@
   // Wrap real renders once; no polling.
   ['renderAll','renderTrip','renderSettings'].forEach(k=>{const old=window[k];if(typeof old==='function'&&!old.__tkFinal){const w=function(){const r=old.apply(this,arguments);setTimeout(polish,0);return r};w.__tkFinal=true;window[k]=w}});
   window.addEventListener('online',()=>setTimeout(stableHeader,0));window.addEventListener('offline',()=>setTimeout(stableHeader,0));
+  window.addEventListener('tripkhata-local-change',()=>setTimeout(()=>{try{renderAll?.()}catch(e){};polish()},0));
   function revealWhenReady(){
     if(window.TRIPKHATA_AUTH_READY){
       try{window.tripKhataRevealApp?.()}catch(e){}
