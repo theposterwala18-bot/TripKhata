@@ -14,9 +14,12 @@ async function sdk(){
   }
 }
 function removeSplash(){
-  const s=$('#tkBootSplash');if(!s)return;
-  s.style.opacity='0';setTimeout(()=>s.remove(),120);
+  ['tkBootSplash','tkBootCover'].forEach(id=>{
+    const s=document.getElementById(id);if(!s)return;
+    s.style.opacity='0';setTimeout(()=>s.remove(),140);
+  });
 }
+window.tripKhataRevealApp=removeSplash;
 function suppressLegacyLogin(){
   try{
     const nodes=[...document.querySelectorAll('div,section,main')].filter(el=>{
@@ -110,10 +113,11 @@ function baseShell(){
   '</div>';
 }
 function show(){
-  removeSplash();
   suppressLegacyLogin();
   $('#tkAuthOverlay')?.remove();
   const d=document.createElement('div');d.id='tkAuthOverlay';d.innerHTML=baseShell();document.body.appendChild(d);
+  window.TRIPKHATA_AUTH_READY=true;
+  requestAnimationFrame(()=>requestAnimationFrame(removeSplash));
   let emailSignup=false,phoneConfirmation=null,recaptcha=null;
   const choices=$('#tk100choices'),phonePanel=$('#tk100phone'),emailPanel=$('#tk100email');
   function main(){choices.style.display='block';phonePanel.style.display='none';emailPanel.style.display='none';$('#tkAuthErr').style.display='none'}
@@ -254,14 +258,23 @@ async function init(){
         suppressLegacyLogin();
         $('#tkAuthOverlay')?.remove();
         bindFirebaseUser(u);
-        removeSplash();
         try{if(typeof renderAll==='function')renderAll()}catch(e){}
-        setTimeout(()=>{try{if(typeof renderAll==='function')renderAll()}catch(e){}},80);
+        window.TRIPKHATA_AUTH_READY=true;
+        setTimeout(()=>{
+          try{if(typeof renderAll==='function')renderAll()}catch(e){}
+          try{window.dispatchEvent(new Event('tripkhata-auth-ready'))}catch(e){}
+        },80);
+        setTimeout(removeSplash,320);
         if(window.tripKhataSyncStart)window.tripKhataSyncStart(u);
       }else{
         suppressLegacyLogin();
-        if(sessionStorage.getItem('tk_offline')){removeSplash();return}
-        showFreshLogin();setTimeout(removeSplash,350);
+        if(sessionStorage.getItem('tk_offline')){
+          window.TRIPKHATA_AUTH_READY=true;
+          try{window.dispatchEvent(new Event('tripkhata-auth-ready'))}catch(e){}
+          setTimeout(removeSplash,260);
+          return;
+        }
+        showFreshLogin();
       }
     });
   }catch(e){
