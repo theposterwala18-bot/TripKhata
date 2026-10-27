@@ -90,27 +90,62 @@
 
   async function first(u){
     const decisionKey='tripkhata_cloud_initialized_'+u.uid;
-    const cleanKey='tripkhata_clean_sync_v060e_'+u.uid;
     const userRef=db.collection('users').doc(u.uid);
     await userRef.set({email:u.email||'',displayName:u.displayName||'',lastLogin:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-    const d=await ref(u.uid).get(),local=snap();
-    if(localStorage.getItem(cleanKey)!=='1'){
-      localStorage.setItem(cleanKey,'1');
-      await push(true);
+
+    const d=await ref(u.uid).get();
+    const local=snap();
+    const localHasData=meaningful(local);
+    const remoteExists=!!(d.exists&&d.data()?.snapshot);
+    const remote=remoteExists?d.data().snapshot:null;
+    const remoteHasData=meaningful(remote);
+
+    // Fresh-install safety: never overwrite an existing cloud snapshot with
+    // an empty/new local state after reinstall, clear-data or device change.
+    if(remoteExists && !localHasData){
+      localStorage.setItem(decisionKey,'1');
+      apply(remote,true);
+      last=sig(remote);
+      status('synced');
+      return;
+    }
+
+    // First cloud initialization: only upload meaningful local data.
+    if(!remoteExists){
+      localStorage.setItem(decisionKey,'1');
+      if(localHasData) await push(true);
+      else { last=sig(local); status('synced'); }
+      return;
+    }
+
+    if(sig(remote)===sig(local)){
+      localStorage.setItem(decisionKey,'1');
       last=sig(local);
       status('synced');
       return;
     }
-    if(!d.exists||!d.data()?.snapshot){localStorage.setItem(decisionKey,'1');await push(true);return}
-    const remote=d.data().snapshot;
-    if(sig(remote)===sig(local)){localStorage.setItem(decisionKey,'1');last=sig(local);status('synced');return}
-    if(!meaningful(local)){localStorage.setItem(decisionKey,'1');apply(remote,true);return}
-    if(localStorage.getItem(decisionKey)==='1'){last=sig(local);await push(false);status('synced');return}
-    status('choice');
-    const choice=await chooseSyncSource();
+
+    // Both sides contain different real data: never silently destroy either.
+    if(remoteHasData && localHasData){
+      status('choice');
+      const choice=await chooseSyncSource();
+      localStorage.setItem(decisionKey,'1');
+      if(choice==='cloud'){
+        apply(remote,true);
+        last=sig(remote);
+        status('synced');
+        return;
+      }
+      await push(true);
+      return;
+    }
+
+    // Cloud is empty but this device has data.
     localStorage.setItem(decisionKey,'1');
-    if(choice==='cloud'){apply(remote,true);return}
-    await push(true);
+    if(localHasData){ await push(true); return; }
+
+    last=sig(local);
+    status('synced');
   }
   function watch(u){
     if(off)off();off=ref(u.uid).onSnapshot(d=>{
