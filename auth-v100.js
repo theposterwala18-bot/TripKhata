@@ -20,25 +20,6 @@ function removeSplash(){
   });
 }
 window.tripKhataRevealApp=removeSplash;
-function suppressLegacyLogin(){
-  try{
-    const nodes=[...document.querySelectorAll('div,section,main')].filter(el=>{
-      if(el.id==='tkAuthOverlay')return false;
-      const t=(el.textContent||'').replace(/\s+/g,' ').trim();
-      return t.includes('v0.2.1') && t.includes('Continue as Guest') && t.includes('TripKhata');
-    }).sort((a,b)=>(a.textContent||'').length-(b.textContent||'').length);
-    const legacy=nodes[0];
-    if(legacy){
-      legacy.dataset.tkLegacyLogin='hidden';
-      legacy.style.setProperty('display','none','important');
-      legacy.setAttribute('aria-hidden','true');
-      return true;
-    }
-  }catch(e){console.warn('suppressLegacyLogin',e)}
-  return false;
-}
-const legacyObserver=new MutationObserver(()=>suppressLegacyLogin());
-legacyObserver.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
 function errbox(msg){
   const e=$('#tkAuthErr');if(e){e.style.display='block';e.textContent=String(msg||'Error').replace('Firebase: ','')}
 }
@@ -106,7 +87,6 @@ function baseShell(){
   '</div>';
 }
 function show(){
-  suppressLegacyLogin();
   $('#tkAuthOverlay')?.remove();
   const d=document.createElement('div');d.id='tkAuthOverlay';d.innerHTML=baseShell();document.body.appendChild(d);
   window.TRIPKHATA_AUTH_READY=true;
@@ -248,7 +228,6 @@ async function init(){
     TK_AUTH.onAuthStateChanged(u=>{
       if(u){
         sessionStorage.removeItem('tk_offline');
-        suppressLegacyLogin();
         $('#tkAuthOverlay')?.remove();
         bindFirebaseUser(u);
         try{if(typeof renderAll==='function')renderAll()}catch(e){}
@@ -260,7 +239,6 @@ async function init(){
         setTimeout(removeSplash,320);
         if(window.tripKhataSyncStart)window.tripKhataSyncStart(u);
       }else{
-        suppressLegacyLogin();
         if(sessionStorage.getItem('tk_offline')){
           window.TRIPKHATA_AUTH_READY=true;
           try{window.dispatchEvent(new Event('tripkhata-auth-ready'))}catch(e){}
