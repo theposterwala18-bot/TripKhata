@@ -2,7 +2,7 @@
 (function(){
   const OWNER_EMAIL=window.TRIPKHATA_OWNER_EMAIL||'dhaliwalballi18@gmail.com';
   const PROFILE_KEY='tripkhata_profile';
-  const APP_ICON_DATA='./icons/tripkhata-app-icon.png?v=111';
+  const APP_ICON_DATA='./icons/tripkhata-app-icon.webp?v=112';
   const $=(s,r=document)=>r.querySelector(s);
   const $$=(s,r=document)=>[...r.querySelectorAll(s)];
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -36,8 +36,8 @@
     const tkLeaf=[...top.querySelectorAll('*')].find(e=>e.children.length===0&&(e.textContent||'').trim()==='TK');
     if(tkLeaf){
       tkLeaf.innerHTML='<img src="'+APP_ICON_DATA+'" alt="TripKhata">';
-      tkLeaf.style.padding='0';tkLeaf.style.overflow='hidden';
-      const im=tkLeaf.querySelector('img');if(im)im.style.cssText='width:100%;height:100%;object-fit:contain;display:block';
+      tkLeaf.style.cssText+=';padding:0!important;overflow:hidden!important;width:42px!important;height:42px!important;min-width:42px!important;flex:0 0 42px!important;border-radius:12px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:transparent!important';
+      const im=tkLeaf.querySelector('img');if(im)im.style.cssText='width:40px!important;height:40px!important;object-fit:contain!important;object-position:center!important;display:block!important';
     }
 
     // Find title block and place version below app name.
