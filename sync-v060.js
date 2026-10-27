@@ -92,60 +92,34 @@
     const decisionKey='tripkhata_cloud_initialized_'+u.uid;
     const userRef=db.collection('users').doc(u.uid);
     await userRef.set({email:u.email||'',displayName:u.displayName||'',lastLogin:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-
     const d=await ref(u.uid).get();
     const local=snap();
     const localHasData=meaningful(local);
     const remoteExists=!!(d.exists&&d.data()?.snapshot);
     const remote=remoteExists?d.data().snapshot:null;
     const remoteHasData=meaningful(remote);
-
-    // Fresh-install safety: never overwrite an existing cloud snapshot with
-    // an empty/new local state after reinstall, clear-data or device change.
     if(remoteExists && !localHasData){
       localStorage.setItem(decisionKey,'1');
-      apply(remote,true);
-      last=sig(remote);
-      status('synced');
-      return;
+      apply(remote,true); last=sig(remote); status('synced'); return;
     }
-
-    // First cloud initialization: only upload meaningful local data.
     if(!remoteExists){
       localStorage.setItem(decisionKey,'1');
-      if(localHasData) await push(true);
-      else { last=sig(local); status('synced'); }
+      if(localHasData) await push(true); else {last=sig(local);status('synced');}
       return;
     }
-
     if(sig(remote)===sig(local)){
-      localStorage.setItem(decisionKey,'1');
-      last=sig(local);
-      status('synced');
-      return;
+      localStorage.setItem(decisionKey,'1');last=sig(local);status('synced');return;
     }
-
-    // Both sides contain different real data: never silently destroy either.
     if(remoteHasData && localHasData){
       status('choice');
       const choice=await chooseSyncSource();
       localStorage.setItem(decisionKey,'1');
-      if(choice==='cloud'){
-        apply(remote,true);
-        last=sig(remote);
-        status('synced');
-        return;
-      }
-      await push(true);
-      return;
+      if(choice==='cloud'){apply(remote,true);last=sig(remote);status('synced');return;}
+      await push(true);return;
     }
-
-    // Cloud is empty but this device has data.
     localStorage.setItem(decisionKey,'1');
-    if(localHasData){ await push(true); return; }
-
-    last=sig(local);
-    status('synced');
+    if(localHasData){await push(true);return;}
+    last=sig(local);status('synced');
   }
   function watch(u){
     if(off)off();off=ref(u.uid).onSnapshot(d=>{
