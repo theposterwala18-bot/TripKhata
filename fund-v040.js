@@ -50,7 +50,7 @@
       <button class="btn primary block" style="margin-top:14px" onclick="saveFundSettings()">Save</button></div></div>`;
   };
   window.saveFundSettings=function(){
-    const t=getTrip(),f=ensure(t);f.holder=fundHolder.value;f.targetPerMember=Number(fundTarget.value||0);save();closeModal();openFundDashboard();toastMsg('Fund settings saved');
+    const t=getTrip(),f=ensure(t);f.holder=fundHolder.value;f.targetPerMember=Number(fundTarget.value||0);save();closeModal();if(typeof renderTrip==='function')renderTrip();openFundDashboard();window.tkFinalPolish?.();toastMsg('Fund settings saved');
   };
 
   window.openFundContribution=function(member=''){
@@ -65,7 +65,7 @@
   window.saveFundContribution=function(){
     const t=getTrip(),f=ensure(t),a=Number(fcAmount.value);if(!a)return alert('Valid amount enter karo.');
     f.contributions.push({id:id(),member:fcMember.value,amount:+a.toFixed(2),mode:fcMode.value,note:fcNote.value.trim(),date:new Date().toISOString(),status:'paid'});
-    activity(`${fcMember.value} added ${t.currency}${a} to Trip Fund via ${fcMode.value}`);save();closeModal();openFundDashboard();toastMsg('Contribution added');
+    activity(`${fcMember.value} added ${t.currency}${a} to Trip Fund via ${fcMode.value}`);save();closeModal();if(typeof renderTrip==='function')renderTrip();openFundDashboard();window.tkFinalPolish?.();toastMsg('Contribution added');
   };
 
   window.openFundExpense=function(prefill={}){
@@ -83,7 +83,7 @@
     const bal=fundBalance(t);if(a>bal+0.009&&!confirm('Trip Fund balance '+fmtM(t,bal)+' hai. Expense fund ton vadh aa. Fir vi record karna?'))return;
     f.transactions.push({id:id(),type:'expense',amount:+a.toFixed(2),desc:feDesc.value.trim()||'Fund Expense',category:feCategory.value,split,date:new Date().toISOString(),mode:'Trip Fund',status:'paid'});
     t.expenses.unshift({id:id(),amount:+a.toFixed(2),payer:'Trip Fund',desc:feDesc.value.trim()||'Fund Expense',category:feCategory.value,split:[...split],photo:null,date:new Date().toISOString(),updatedAt:new Date().toISOString(),source:'fund'});
-    activity(`Trip Fund paid ${t.currency}${a} for ${feDesc.value.trim()||'expense'}`);save();closeModal();renderTrip();toastMsg('Fund expense added');
+    activity(`Trip Fund paid ${t.currency}${a} for ${feDesc.value.trim()||'expense'}`);save();closeModal();renderTrip();window.tkFinalPolish?.();toastMsg('Fund expense added');
   };
 
   // fund-aware balances: fund contributions count as member money into common pool; fund-paid expenses are already represented in expense shares.

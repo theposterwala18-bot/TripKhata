@@ -75,7 +75,7 @@
     if(!x||!a)return alert('Valid amount enter karo.');
     x.member=fcMember.value;x.amount=+a.toFixed(2);x.mode=fcMode.value;x.note=fcNote.value.trim();x.updatedAt=new Date().toISOString();
     activity('Fund contribution corrected: '+x.member+' • '+(t.currency||'₹')+a);
-    save();closeModal();openFundDashboard();toastMsg('Contribution updated');
+    save();closeModal();if(typeof renderTrip==='function')renderTrip();openFundDashboard();window.tkFinalPolish?.();toastMsg('Contribution updated');
   };
 
   window.saveFundExpenseEdit=function(entryId){
@@ -88,7 +88,7 @@
     x.amount=+a.toFixed(2);x.desc=feDesc.value.trim()||'Fund Expense';x.category=feCategory.value;x.split=[...split];x.updatedAt=new Date().toISOString();
     if(e){e.amount=x.amount;e.desc=x.desc;e.category=x.category;e.split=[...split];e.updatedAt=x.updatedAt;x.expenseId=e.id;}
     activity('Fund expense corrected: '+(t.currency||'₹')+a+' • '+x.desc);
-    save();closeModal();openFundDashboard();if(typeof renderTrip==='function')renderTrip();toastMsg('Fund expense updated');
+    save();closeModal();if(typeof renderTrip==='function')renderTrip();openFundDashboard();window.tkFinalPolish?.();toastMsg('Fund expense updated');
   };
 
   window.deleteFundActivity=function(kind,entryId){
@@ -102,7 +102,7 @@
     }
     x.status='void';x.voidedAt=new Date().toISOString();
     activity('Deleted '+(isC?'fund contribution':'fund expense')+': '+(t.currency||'₹')+Number(x.amount||0));
-    save();closeModal();openFundDashboard();if(typeof renderTrip==='function')renderTrip();toastMsg('Fund entry deleted');
+    save();closeModal();if(typeof renderTrip==='function')renderTrip();openFundDashboard();window.tkFinalPolish?.();toastMsg('Fund entry deleted');
   };
 
   window.saveFundExpense=function(){

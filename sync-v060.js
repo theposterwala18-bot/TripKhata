@@ -1,7 +1,35 @@
 /* TripKhata v0.6.0 — Firestore private account sync */
 (function(){
-  let db=null,off=null,timer=null,last='',device=localStorage.getItem('tripkhata_device_id');
+  let db=null,off=null,timer=null,last='',pushTimer=null,applyingRemote=false;
+  let lastLocalChangeAt=Number(localStorage.getItem('tripkhata_last_local_change')||0);
+  let device=localStorage.getItem('tripkhata_device_id');
   if(!device){device='d_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);localStorage.setItem('tripkhata_device_id',device)}
+
+  const originalSave=typeof window.save==='function'?window.save:null;
+  function cacheCurrentState(){
+    try{
+      if(typeof state==='undefined')return;
+      const copy=JSON.parse(JSON.stringify(state));
+      delete copy.user; delete copy.cloud; delete copy.login; delete copy.auth;
+      const u=window.TK_AUTH?.currentUser;
+      const key=u?.uid?'tripkhata_account_cache_'+u.uid:(sessionStorage.getItem('tk_offline')?'tripkhata_guest_cache':'');
+      if(key)localStorage.setItem(key,JSON.stringify(copy));
+    }catch(e){}
+  }
+  if(originalSave){
+    window.save=function(sync=true){
+      const r=originalSave.apply(this,arguments);
+      if(!applyingRemote){
+        lastLocalChangeAt=Date.now();
+        localStorage.setItem('tripkhata_last_local_change',String(lastLocalChangeAt));
+        cacheCurrentState();
+        clearTimeout(pushTimer);
+        pushTimer=setTimeout(()=>push(false).catch(()=>{}),220);
+        try{window.dispatchEvent(new Event('tripkhata-local-change'))}catch(e){}
+      }
+      return r;
+    };
+  }
 
   function loadFirestore(){
     if(window.firebase&&firebase.firestore)return Promise.resolve();
@@ -42,7 +70,8 @@
         Object.keys(state).forEach(k=>delete state[k]);Object.assign(state,JSON.parse(JSON.stringify(x.tripState)));
         if(keepUser)state.user=keepUser;
         if(keepCloud)state.cloud=keepCloud;
-        if(typeof save==='function')save();
+        applyingRemote=true;
+        try{if(originalSave)originalSave(false);else if(typeof save==='function')save(false)}finally{applyingRemote=false}
       }
       const SAFE_KEYS=new Set(['tripkhata_khatabook_v1','tripkhata_state','tripkhata_data','tripkhata_backup','tripkhata_profile','tripkhata_settings']);
       Object.entries(x.local||{}).forEach(([k,v])=>{if(SAFE_KEYS.has(k))localStorage.setItem(k,v)});
@@ -73,7 +102,8 @@
     const u=window.TK_AUTH?.currentUser;if(!u||!db||!navigator.onLine)return;
     const x=snap(),h=sig(x);if(!force&&h===last)return;
     status('syncing');
-    await ref(u.uid).set({snapshot:x,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAtClient:Date.now(),updatedBy:device,version:window.TRIPKHATA_VERSION||'0.6.0'},{merge:true});
+    const clientAt=Math.max(Date.now(),lastLocalChangeAt||0);
+    await ref(u.uid).set({snapshot:x,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAtClient:clientAt,updatedBy:device,version:window.TRIPKHATA_VERSION||'0.6.0'},{merge:true});
     last=h;status('synced');badge();
   }
   function chooseSyncSource(){
@@ -123,11 +153,34 @@
   }
   function watch(u){
     if(off)off();off=ref(u.uid).onSnapshot(d=>{
-      if(!d.exists)return;const z=d.data()||{};if(z.updatedBy===device||!z.snapshot)return;
-      const h=sig(z.snapshot);if(h&&h!==last){apply(z.snapshot,false);last=h;status('synced');badge()}
+      if(!d.exists)return;
+      const z=d.data()||{};
+      if(z.updatedBy===device||!z.snapshot)return;
+      const h=sig(z.snapshot);
+      if(!h||h===last)return;
+      const remoteAt=Number(z.updatedAtClient||0);
+      const localNow=sig(snap());
+      const hasLocalChanges=localNow!==last;
+      if(hasLocalChanges && (!remoteAt || lastLocalChangeAt>=remoteAt)){
+        push(false).catch(()=>{});
+        return;
+      }
+      if(remoteAt && lastLocalChangeAt && remoteAt<lastLocalChangeAt){
+        push(false).catch(()=>{});
+        return;
+      }
+      apply(z.snapshot,false);last=h;status('synced');badge();
     },e=>console.warn('TripKhata cloud watch',e));
   }
-  window.tripKhataSyncNow=async function(){try{await push(true);if(typeof toastMsg==='function')toastMsg('Cloud synced')}catch(e){alert('Sync error: '+e.message)}};
+  window.tripKhataSyncNow=async function(){
+    try{
+      if(typeof renderAll==='function')renderAll();
+      await push(true);
+      if(typeof renderAll==='function')renderAll();
+      if(typeof toastMsg==='function')toastMsg('Dashboard refreshed & cloud synced');
+    }catch(e){alert('Sync error: '+e.message)}
+  };
+  window.tripKhataRefreshNow=window.tripKhataSyncNow;
   window.tripKhataSyncStart=async function(u){
     try{
       clearInterval(timer);if(off){off();off=null}

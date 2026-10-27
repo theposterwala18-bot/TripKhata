@@ -20,6 +20,36 @@ function removeSplash(){
   });
 }
 window.tripKhataRevealApp=removeSplash;
+function blankState(){
+  return {user:null,trips:[],active:null,activity:[],cloud:{enabled:false,provider:null}};
+}
+function replaceState(next){
+  if(typeof state==='undefined')return;
+  Object.keys(state).forEach(k=>delete state[k]);
+  Object.assign(state,JSON.parse(JSON.stringify(next||blankState())));
+  try{if(typeof save==='function')save(false)}catch(e){}
+}
+function cacheKeyForUser(uid){return 'tripkhata_account_cache_'+uid}
+function loadCachedState(key){
+  try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):null}catch(e){return null}
+}
+function cacheCurrentFor(uid){
+  try{
+    if(!uid||typeof state==='undefined')return;
+    const copy=JSON.parse(JSON.stringify(state));
+    delete copy.user;delete copy.cloud;delete copy.login;delete copy.auth;
+    localStorage.setItem(cacheKeyForUser(uid),JSON.stringify(copy));
+  }catch(e){}
+}
+function switchToAccountState(uid){
+  const cached=loadCachedState(cacheKeyForUser(uid));
+  replaceState(cached||blankState());
+}
+function switchToGuestState(){
+  const cached=loadCachedState('tripkhata_guest_cache');
+  replaceState(cached||blankState());
+}
+
 function errbox(msg){
   const e=$('#tkAuthErr');if(e){e.style.display='block';e.textContent=String(msg||'Error').replace('Firebase: ','')}
 }
@@ -39,16 +69,11 @@ function bindFirebaseUser(u){
 function legacyGuest(){
   sessionStorage.setItem('tk_offline','1');
   try{
+    switchToGuestState();
     if(typeof state!=='undefined'){
-      state.user={
-        id:state.user?.id||('guest_'+Date.now()),
-        name:'Guest',
-        email:'',
-        guest:true,
-        loggedIn:false
-      };
+      state.user={id:'guest',name:'Guest',email:'',guest:true,loggedIn:false};
       state.cloud={enabled:false,provider:null};
-      if(typeof save==='function')save();
+      if(typeof save==='function')save(false);
     }
     const main=document.getElementById('mainView');
     if(main)main.classList.remove('hidden');
@@ -188,19 +213,17 @@ window.tripKhataNativeGoogleError=function(message){
 window.tripKhataLogout=async function(){
   sessionStorage.removeItem('tk_offline');
   try{
-    if(typeof state!=='undefined'){
-      state.cloud={enabled:false,provider:null};
-      if(state.user){
-        state.user.loggedIn=false;
-        delete state.user.firebaseUid;
-        delete state.user.provider;
-      }
-      if(typeof save==='function')save();
-    }
+    const uid=window.TK_AUTH?.currentUser?.uid||state?.user?.firebaseUid;
+    if(uid)cacheCurrentFor(uid);
   }catch(e){}
   try{
     if(window.TK_AUTH?.currentUser) await window.TK_AUTH.signOut();
   }catch(e){console.warn('TripKhata sign out',e)}
+  try{
+    replaceState(blankState());
+    if(typeof renderAll==='function')renderAll();
+    if(typeof showPage==='function')showPage('home');
+  }catch(e){}
   showFreshLogin();
 };
 function badge(){
@@ -229,6 +252,7 @@ async function init(){
       if(u){
         sessionStorage.removeItem('tk_offline');
         $('#tkAuthOverlay')?.remove();
+        switchToAccountState(u.uid);
         bindFirebaseUser(u);
         try{if(typeof renderAll==='function')renderAll()}catch(e){}
         window.TRIPKHATA_AUTH_READY=true;
