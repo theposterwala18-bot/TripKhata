@@ -11,8 +11,8 @@ android {
         applicationId 'com.theposterwala.tripkhata'
         minSdk 24
         targetSdk 36
-        versionCode 1012
-        versionName '1.0.12'
+        versionCode 1013
+        versionName '1.0.13'
     }
 
     signingConfigs {
