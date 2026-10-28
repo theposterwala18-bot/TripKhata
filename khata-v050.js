@@ -19,6 +19,11 @@
     if(!kb.profile.lang)kb.profile.lang='en';
     return kb;
   }
+  window.kbRepairData=function(){
+    normalizeKb();
+    ksave();
+    return {customers:kb.customers.length,suppliers:kb.suppliers.length};
+  };
   function kid(){return Date.now()+Math.floor(Math.random()*10000)}
   function money(n){return '₹'+(Math.round((Number(n)||0)*100)/100).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:2})}
   function escK(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
