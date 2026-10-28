@@ -2,9 +2,28 @@
 (function(){
   const KEY='tripkhata_khatabook_v1';
   const KBV=window.TRIPKHATA_VERSION||'0.5.2';
-  let kb=JSON.parse(localStorage.getItem(KEY)||'null')||{customers:[],suppliers:[],profile:{name:state?.user?.name||'My Khata'}};
-  kb.profile=kb.profile||{};if(!kb.profile.lang)kb.profile.lang='en';
+  let kb;
+  try{kb=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){kb=null}
+  if(!kb||typeof kb!=='object')kb={};
+  if(!Array.isArray(kb.customers))kb.customers=[];
+  if(!Array.isArray(kb.suppliers))kb.suppliers=[];
+  if(!kb.profile||typeof kb.profile!=='object')kb.profile={name:state?.user?.name||'My Khata'};
+  if(!kb.profile.name)kb.profile.name=state?.user?.name||'My Khata';
+  if(!kb.profile.lang)kb.profile.lang='en';
   function ksave(){localStorage.setItem(KEY,JSON.stringify(kb))}
+  function normalizeKb(){
+    if(!kb||typeof kb!=='object')kb={};
+    if(!Array.isArray(kb.customers))kb.customers=[];
+    if(!Array.isArray(kb.suppliers))kb.suppliers=[];
+    if(!kb.profile||typeof kb.profile!=='object')kb.profile={name:state?.user?.name||'My Khata',lang:'en'};
+    if(!kb.profile.lang)kb.profile.lang='en';
+    return kb;
+  }
+  window.kbRepairData=function(){
+    normalizeKb();
+    ksave();
+    return {customers:kb.customers.length,suppliers:kb.suppliers.length};
+  };
   function kid(){return Date.now()+Math.floor(Math.random()*10000)}
   function money(n){return '₹'+(Math.round((Number(n)||0)*100)/100).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:2})}
   function escK(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
@@ -114,6 +133,7 @@
   }
 
   window.kbOpenMain=function(type='customer'){
+    normalizeKb();
     window.kbLangReturn=()=>kbOpenMain(type);
     const list=type==='customer'?kb.customers:kb.suppliers,t=totals(type),isC=type==='customer',ct=isC?customerTransactionTotals():null,st=!isC?supplierTransactionTotals():null;
     shell(type,`<div style="padding:14px 14px 90px">
@@ -139,6 +159,7 @@
   };
 
   window.kbAddEntity=function(type){
+    normalizeKb();
     const isC=type==='customer';
     shell(type,`<div style="padding:16px"><div style="background:white;border-radius:18px;padding:18px">
       <div style="font-size:22px;font-weight:900">Add ${isC?'Customer':'Supplier'}</div>
@@ -152,12 +173,14 @@
   };
   window.kbPickIntoForm=function(){pickContact(c=>{kbName.value=c.name;kbPhone.value=c.phone})};
   window.kbSaveEntity=function(type){
+    normalizeKb();
     const name=kbName.value.trim(),phone=kbPhone.value.trim();if(!name)return alert('Name enter karo.');
     const list=type==='customer'?kb.customers:kb.suppliers;if(list.some(x=>x.name.toLowerCase()===name.toLowerCase()&&(x.phone||'')===phone))return alert('Eh record already exists.');
     list.unshift({id:kid(),name,phone,entries:[],createdAt:new Date().toISOString()});ksave();kbOpenMain(type);
   };
 
   window.kbOpenLedger=function(type,eid){
+    normalizeKb();
     window.kbLangReturn=()=>kbOpenLedger(type,eid);
     const list=type==='customer'?kb.customers:kb.suppliers,x=list.find(z=>z.id===eid);if(!x)return;const b=entityBal(x,type),isC=type==='customer';
     shell(type,`<div style="padding:14px 14px 100px">

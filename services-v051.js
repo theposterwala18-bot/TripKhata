@@ -46,13 +46,24 @@ if(!top) return;
       if(typeof goNav==='function')goNav('home');
       return;
     }
-    if(which==='customer'){
-      setActiveService('customer');
-      if(typeof kbOpenMain==='function')kbOpenMain('customer');
-      return;
-    }
-    setActiveService('supplier');
-    if(typeof kbOpenMain==='function')kbOpenMain('supplier');
+    const open=(type)=>{
+      try{
+        if(typeof kbOpenMain!=='function')throw new Error('Khata module not loaded');
+        return kbOpenMain(type);
+      }catch(e){
+        console.error('TripKhata service open failed',type,e);
+        try{
+          if(typeof window.kbRepairData==='function'){
+            window.kbRepairData();
+            return kbOpenMain(type);
+          }
+        }catch(e2){console.error('TripKhata service repair failed',type,e2)}
+        setActiveService('trip');
+        alert((type==='customer'?'Customer Khata':'Supplier')+' open nahi ho saki. Please tap Refresh once. Error: '+(e?.message||e));
+      }
+    };
+    if(which==='customer'){setActiveService('customer');open('customer');return}
+    setActiveService('supplier');open('supplier');
   };
 
   // Keep active state synced when Khata modules are opened
