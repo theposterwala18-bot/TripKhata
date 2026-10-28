@@ -136,7 +136,7 @@
       const next={name:$('#tkProfName').value.trim()||p.name,phone:$('#tkProfPhone').value.trim(),bio:$('#tkProfBio').value.trim(),photo:$('#tkBigAvatar').dataset.photo||p.photo||''};
       saveProfile(next);
       try{
-        if(typeof state!=='undefined'){state.user=Object.assign({},state.user||{},{name:next.name,bio:next.bio,phone:next.phone});window.save?.()}
+        if(typeof state!=='undefined'){state.user=Object.assign({},state.user||{},{name:next.name,bio:next.bio,phone:next.phone});window.save?.(false)}
         if(u&&next.name!==u.displayName)await u.updateProfile({displayName:next.name});
         if(window.firebase?.firestore&&u)await firebase.firestore().collection('users').doc(u.uid).set({displayName:next.name,bio:next.bio,phone:next.phone,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
         await window.tripKhataSyncNow?.();
