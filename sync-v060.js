@@ -178,10 +178,6 @@
         push(false).catch(()=>{});
         return;
       }
-      if(remoteAt && lastLocalChangeAt && remoteAt<lastLocalChangeAt){
-        push(false).catch(()=>{});
-        return;
-      }
       apply(z.snapshot,false);last=h;status('synced');badge();
     },e=>console.warn('TripKhata cloud watch',e));
   }
