@@ -1,0 +1,34 @@
+name: Supplier Party Edit Regression
+on:
+  push:
+    branches: [ fix-supplier-party-edit-v1018 ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax check
+        run: node --check supplier-v070.js
+      - name: Verify edit flow wiring
+        shell: bash
+        run: |
+          grep -q "function partyForm(bid,pid)" supplier-v070.js
+          grep -q "Edit Party" supplier-v070.js
+          grep -q "Update Party" supplier-v070.js
+          grep -q "updatedAt:new Date().toISOString()" supplier-v070.js
+      - name: Verify ledger history is not rewritten by party edit
+        shell: python
+        run: |
+          from pathlib import Path
+          s=Path('supplier-v070.js').read_text()
+          a=s.index('function partyForm(bid,pid)')
+          b=s.index('function ledger(pid)')
+          block=s[a:b]
+          assert 'z.entries.push' in block  # only add-mode opening balance
+          update=block[block.index('if(pid){'):block.index('}else{')]
+          assert 'entries' not in update.lower()
+          assert 'Object.assign(ep,{name:n,phone:phone,address:address,role:role' in update
+          print('Party edit preserves transaction history PASS')
