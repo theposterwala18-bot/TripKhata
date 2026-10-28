@@ -50,7 +50,7 @@ public class MainActivity extends Activity {
         s.setAllowFileAccess(true);
         s.setAllowContentAccess(true);
         s.setMediaPlaybackRequiresUserGesture(false);
-        s.setUserAgentString(s.getUserAgentString() + " TripKhataAndroid/1.0.14");
+        s.setUserAgentString(s.getUserAgentString() + " TripKhataAndroid/1.0.15");
 
         webView.addJavascriptInterface(new AndroidBridge(), "TripKhataAndroid");
 

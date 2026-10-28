@@ -104,7 +104,7 @@
         <label>Phone (optional)<input id="tkProfPhone" value="${esc(p.phone)}" inputmode="tel"></label>
         <label class="tkFull">Bio<textarea id="tkProfBio" placeholder="A short profile bio...">${esc(p.bio)}</textarea></label>
       </div>
-      <div class="tkSyncCard"><div><b>☁ Cloud Sync</b><div class="tkMuted">Firebase account: ${esc(p.email||'Not signed in')}</div></div><span class="tkStatus">${navigator.onLine?(window.TRIPKHATA_CLOUD?.status==='synced'?'Synced':'Connected'):'Offline'}</span></div>
+      <div class="tkSyncCard"><div><b>☁ Cloud Sync</b><div class="tkMuted">Firebase account: ${esc(p.email||'Not signed in')}</div></div><span class="tkStatus">${navigator.onLine?(window.TRIPKHATA_CLOUD?.status==='synced'?'Synced':window.TRIPKHATA_CLOUD?.status==='syncing'?'Syncing…':window.TRIPKHATA_CLOUD?.status==='error'?'Sync Error':window.TK_AUTH?.currentUser?'Connected':'Not signed in'):'Offline'}</span></div>
       <div class="tkActionGrid">
         <button id="tkSaveProfile" class="tkPrimary">Save Profile</button>
         <button id="tkSyncNow">☁ Sync Now</button>
@@ -136,7 +136,7 @@
       const next={name:$('#tkProfName').value.trim()||p.name,phone:$('#tkProfPhone').value.trim(),bio:$('#tkProfBio').value.trim(),photo:$('#tkBigAvatar').dataset.photo||p.photo||''};
       saveProfile(next);
       try{
-        if(typeof state!=='undefined'){state.user=Object.assign({},state.user||{},{name:next.name,bio:next.bio,phone:next.phone});window.save?.()}
+        if(typeof state!=='undefined'){state.user=Object.assign({},state.user||{},{name:next.name,bio:next.bio,phone:next.phone});window.save?.(false)}
         if(u&&next.name!==u.displayName)await u.updateProfile({displayName:next.name});
         if(window.firebase?.firestore&&u)await firebase.firestore().collection('users').doc(u.uid).set({displayName:next.name,bio:next.bio,phone:next.phone,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
         await window.tripKhataSyncNow?.();
@@ -154,6 +154,9 @@
       $('#tkOwnerInfo').onclick=async()=>{const info='TripKhata v'+(window.TRIPKHATA_VERSION||'')+' | '+(window.TRIPKHATA_CLOUD?.status||'unknown')+' | '+location.href;try{await navigator.clipboard.writeText(info);alert('App info copied.')}catch(e){alert(info)}};
     }
   }
+
+  window.tripKhataOpenProfile=openProfile;
+  window.openProfile=openProfile;
 
   function settingsCard(){
     const set=$('#page-settings');if(!set)return;

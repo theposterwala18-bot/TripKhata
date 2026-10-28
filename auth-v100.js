@@ -62,7 +62,7 @@ function bindFirebaseUser(u){
       firebaseUid:u.uid,provider:'firebase',loggedIn:true
     });
     state.cloud={enabled:true,provider:'firebase'};
-    if(typeof save==='function')save();
+    if(typeof save==='function')save(false);
     if(typeof renderAll==='function')setTimeout(renderAll,50);
   }catch(e){console.warn('bindFirebaseUser',e)}
 }
