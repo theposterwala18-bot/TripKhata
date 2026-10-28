@@ -63,7 +63,16 @@
   function meaningful(x){
     if(x?.tripState?.trips?.length)return true;
     if(x?.tripState?.members?.length)return true;
-    return Object.values(x?.local||{}).some(v=>String(v||'').length>20);
+    try{
+      const raw=x?.local?.tripkhata_khatabook_v1;
+      if(raw){
+        const k=JSON.parse(raw);
+        if((k?.customers||[]).length||(k?.suppliers||[]).length)return true;
+        const sb=k?.supplierBusiness;
+        if((sb?.businesses||[]).length||(sb?.parties||[]).length||(sb?.entries||[]).length)return true;
+      }
+    }catch(e){}
+    return false;
   }
   function apply(x,reload){
     if(!x)return;
