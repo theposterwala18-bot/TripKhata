@@ -1,0 +1,56 @@
+name: Deep TripKhata Regression Audit
+on:
+  push:
+    branches: [ fix-cloud-restore-v1015 ]
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static architecture checks
+        shell: python
+        run: |
+          import re,base64,gzip,pathlib,sys
+          idx=pathlib.Path('index.html').read_text(encoding='utf-8')
+          m=re.search(r'atob\("([A-Za-z0-9+/=]+)"\)',idx)
+          assert m, 'embedded base missing'
+          html=gzip.decompress(base64.b64decode(m.group(1))).decode('utf-8')
+          forbidden=['id="authView"','Firebase/Supabase adapter point',"BroadcastChannel('tripkhata-sync')",'Profile & Sync</div>']
+          for x in forbidden:
+            assert x not in html, 'legacy/unsafe remnant: '+x
+          assert 'function openProfile(){if(window.tripKhataOpenProfile)' in html, 'profile bridge missing'
+          sync=pathlib.Path('sync-v060.js').read_text(encoding='utf-8')
+          auth=pathlib.Path('auth-v100.js').read_text(encoding='utf-8')
+          sw=pathlib.Path('sw.js').read_text(encoding='utf-8')
+          checks=[
+            ('syncReady=false' in sync,'initial restore gate missing'),
+            ("TRACKED_LOCAL_KEYS" in sync,'direct localStorage tracking missing'),
+            ('Storage.prototype.setItem' in sync,'storage hook missing'),
+            ("save(false)" in auth,'auth metadata non-sync save missing'),
+            ('./sync-v060.js?v=117' in idx,'index sync cache-bust missing'),
+            ('./fund-edit-v041.js?v=116' in idx,'fund edit loader missing'),
+            ('./fund-edit-v041.js?v=116' in sw,'service-worker fund edit cache missing'),
+            ('./sync-v060.js?v=117' in sw,'service-worker sync version missing'),
+          ]
+          for ok,msg in checks: assert ok,msg
+          print('Static audit PASS')
+      - name: JavaScript syntax checks
+        shell: bash
+        run: |
+          for f in sync-v060.js auth-v100.js final-ui-v061.js fund-v040.js fund-edit-v041.js khata-v050.js supplier-v070.js shared-trip-v090.js backup-v074.js cloud-v060.js sw.js; do node --check "$f"; done
+      - name: Embedded base inline-script syntax checks
+        shell: python
+        run: |
+          import re,base64,gzip,pathlib
+          idx=pathlib.Path('index.html').read_text(encoding='utf-8')
+          m=re.search(r'atob\("([A-Za-z0-9+/=]+)"\)',idx)
+          html=gzip.decompress(base64.b64decode(m.group(1))).decode('utf-8')
+          scripts=re.findall(r'<script[^>]*>(.*?)</script>',html,flags=re.S)
+          out=pathlib.Path('/tmp/tk-inline');out.mkdir(exist_ok=True)
+          for i,s in enumerate(scripts): (out/f'{i}.js').write_text(s,encoding='utf-8')
+          print(len(scripts))
+      - name: Check embedded scripts
+        shell: bash
+        run: |
+          for f in /tmp/tk-inline/*.js; do node --check "$f"; done
