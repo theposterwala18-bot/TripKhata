@@ -1,7 +1,9 @@
 name: Deep TripKhata Regression Audit
 on:
   push:
-    branches: [ fix-cloud-restore-v1015 ]
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 jobs:
   audit:
