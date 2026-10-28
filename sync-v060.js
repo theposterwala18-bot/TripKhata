@@ -1,6 +1,6 @@
 /* TripKhata v0.6.0 — Firestore private account sync */
 (function(){
-  let db=null,off=null,timer=null,last='',pushTimer=null,applyingRemote=false;
+  let db=null,off=null,timer=null,last='',pushTimer=null,applyingRemote=false,syncReady=false;
   let lastLocalChangeAt=Number(localStorage.getItem('tripkhata_last_local_change')||0);
   let device=localStorage.getItem('tripkhata_device_id');
   if(!device){device='d_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);localStorage.setItem('tripkhata_device_id',device)}
@@ -20,12 +20,16 @@
     window.save=function(sync=true){
       const r=originalSave.apply(this,arguments);
       if(!applyingRemote){
-        lastLocalChangeAt=Date.now();
-        localStorage.setItem('tripkhata_last_local_change',String(lastLocalChangeAt));
         cacheCurrentState();
-        clearTimeout(pushTimer);
-        pushTimer=setTimeout(()=>push(false).catch(()=>{}),220);
         try{window.dispatchEvent(new Event('tripkhata-local-change'))}catch(e){}
+        if(sync!==false){
+          lastLocalChangeAt=Date.now();
+          localStorage.setItem('tripkhata_last_local_change',String(lastLocalChangeAt));
+          clearTimeout(pushTimer);
+          if(syncReady && window.TK_AUTH?.currentUser){
+            pushTimer=setTimeout(()=>push(false).catch(()=>{}),220);
+          }
+        }
       }
       return r;
     };
@@ -98,8 +102,8 @@
     if(b.textContent!==next)b.textContent=next;
     b.style.minWidth='68px';
   }
-  async function push(force){
-    const u=window.TK_AUTH?.currentUser;if(!u||!db||!navigator.onLine)return;
+  async function push(force,allowBeforeReady=false){
+    const u=window.TK_AUTH?.currentUser;if(!u||!db||!navigator.onLine||(!syncReady&&!allowBeforeReady))return;
     const x=snap(),h=sig(x);if(!force&&h===last)return;
     status('syncing');
     const clientAt=Math.max(Date.now(),lastLocalChangeAt||0);
@@ -134,7 +138,7 @@
     }
     if(!remoteExists){
       localStorage.setItem(decisionKey,'1');
-      if(localHasData) await push(true); else {last=sig(local);status('synced');}
+      if(localHasData) await push(true,true); else {last=sig(local);status('synced');}
       return;
     }
     if(sig(remote)===sig(local)){
@@ -145,10 +149,10 @@
       const choice=await chooseSyncSource();
       localStorage.setItem(decisionKey,'1');
       if(choice==='cloud'){apply(remote,true);last=sig(remote);status('synced');return;}
-      await push(true);return;
+      await push(true,true);return;
     }
     localStorage.setItem(decisionKey,'1');
-    if(localHasData){await push(true);return;}
+    if(localHasData){await push(true,true);return;}
     last=sig(local);status('synced');
   }
   function watch(u){
@@ -175,7 +179,7 @@
   window.tripKhataSyncNow=async function(){
     try{
       if(typeof renderAll==='function')renderAll();
-      await push(true);
+      await push(true,true);
       if(typeof renderAll==='function')renderAll();
       if(typeof toastMsg==='function')toastMsg('Dashboard refreshed & cloud synced');
     }catch(e){alert('Sync error: '+e.message)}
@@ -183,11 +187,17 @@
   window.tripKhataRefreshNow=window.tripKhataSyncNow;
   window.tripKhataSyncStart=async function(u){
     try{
-      clearInterval(timer);if(off){off();off=null}
+      syncReady=false;
+      clearTimeout(pushTimer);clearInterval(timer);if(off){off();off=null}
       await loadFirestore();db=firebase.firestore();try{await db.enablePersistence({synchronizeTabs:true})}catch(e){}
       window.TRIPKHATA_CLOUD=window.TRIPKHATA_CLOUD||{};TRIPKHATA_CLOUD.enabled=true;
-      try{if(typeof state!=='undefined'){state.cloud={enabled:true,provider:'firebase'};if(typeof save==='function')save();}}catch(e){}
-      await first(u);watch(u);timer=setInterval(()=>push(false).catch(()=>{}),12000);badge();
+      try{if(typeof state!=='undefined'){state.cloud={enabled:true,provider:'firebase'};if(typeof save==='function')save(false);}}catch(e){}
+      await first(u);
+      syncReady=true;
+      last=sig(snap());
+      watch(u);
+      timer=setInterval(()=>push(false).catch(()=>{}),12000);
+      badge();
     }catch(e){console.error(e);status('error');badge()}
   };
   window.addEventListener('online',()=>{badge();push(false).catch(()=>{})});window.addEventListener('offline',()=>{status('offline');badge()});
