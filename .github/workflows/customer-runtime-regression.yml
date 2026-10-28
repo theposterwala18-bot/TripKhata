@@ -21,6 +21,7 @@ jobs:
           const nodes={};
           function node(id){return nodes[id]||(nodes[id]={id,innerHTML:'',style:{},children:[],appendChild(x){this.children.push(x)},remove(){},querySelector(){return null}})}
           global.document={
+            head:{appendChild(x){if(x.id)nodes[x.id]=x}},
             body:{appendChild(x){if(x.id)nodes[x.id]=x}},
             getElementById:id=>nodes[id]||null,
             createElement:tag=>({tag,id:'',innerHTML:'',style:{},children:[],appendChild(x){this.children.push(x)}}),
