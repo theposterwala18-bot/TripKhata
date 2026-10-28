@@ -6,7 +6,7 @@ const ASSETS=[
   './khata-v050.js?v=116','./supplier-v070.js?v=082','./ui-system-v100.js?v=100','./services-v051.js?v=116',
   './firebase-config.js','./owner-config.js?v=081','./cloud-v060.js?v=115','./sync-v060.js?v=117','./auth-v100.js?v=117',
   './final-ui-v061.js?v=117','./customer-report-v071.js?v=077','./backup-v074.js?v=080',
-  './support-owner-v080.js?v=080','./nav-persist-v080.js?v=080','./shared-trip-v090.js?v=092','./connected-khata-v082.js?v=082','./privacy.html','./delete-account.html'
+  './support-owner-v080.js?v=080','./nav-persist-v080.js?v=080','./shared-trip-v090.js?v=117','./connected-khata-v082.js?v=082','./release-hardening-v117.js?v=117','./privacy.html','./delete-account.html'
 ];
 
 self.addEventListener('install',event=>{
