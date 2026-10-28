@@ -11,8 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run malformed-data Customer Khata runtime test
-        shell: node
+        shell: bash
         run: |
+          node <<'NODE'
           const fs=require('fs'),vm=require('vm');
           const store=new Map([['tripkhata_khatabook_v1',JSON.stringify({supplierBusiness:{businesses:[],parties:[],entries:[]}})]]);
           global.localStorage={getItem:k=>store.has(k)?store.get(k):null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)};
@@ -39,6 +40,7 @@ jobs:
           const host=document.getElementById('kbHost');
           if(!host||!/Customer Khata/.test(host.innerHTML))throw new Error('Customer Khata did not render');
           console.log('Customer Khata malformed-data runtime PASS');
+          NODE
       - name: Verify service switch has repair fallback
         shell: bash
         run: |
