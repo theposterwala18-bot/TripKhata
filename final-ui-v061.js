@@ -104,7 +104,7 @@
         <label>Phone (optional)<input id="tkProfPhone" value="${esc(p.phone)}" inputmode="tel"></label>
         <label class="tkFull">Bio<textarea id="tkProfBio" placeholder="A short profile bio...">${esc(p.bio)}</textarea></label>
       </div>
-      <div class="tkSyncCard"><div><b>☁ Cloud Sync</b><div class="tkMuted">Firebase account: ${esc(p.email||'Not signed in')}</div></div><span class="tkStatus">${navigator.onLine?(window.TRIPKHATA_CLOUD?.status==='synced'?'Synced':'Connected'):'Offline'}</span></div>
+      <div class="tkSyncCard"><div><b>☁ Cloud Sync</b><div class="tkMuted">Firebase account: ${esc(p.email||'Not signed in')}</div></div><span class="tkStatus">${navigator.onLine?(window.TRIPKHATA_CLOUD?.status==='synced'?'Synced':window.TRIPKHATA_CLOUD?.status==='syncing'?'Syncing…':window.TRIPKHATA_CLOUD?.status==='error'?'Sync Error':window.TK_AUTH?.currentUser?'Connected':'Not signed in'):'Offline'}</span></div>
       <div class="tkActionGrid">
         <button id="tkSaveProfile" class="tkPrimary">Save Profile</button>
         <button id="tkSyncNow">☁ Sync Now</button>
