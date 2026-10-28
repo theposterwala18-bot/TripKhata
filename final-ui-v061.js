@@ -155,6 +155,9 @@
     }
   }
 
+  window.tripKhataOpenProfile=openProfile;
+  window.openProfile=openProfile;
+
   function settingsCard(){
     const set=$('#page-settings');if(!set)return;
     $('#tkOldFinalCard')?.remove();
