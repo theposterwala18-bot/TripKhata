@@ -1,0 +1,55 @@
+name: v1.0.17 Release Hardening Regression
+on:
+  push:
+    branches: [ release-hardening-v1017 ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+jobs:
+  hardening:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: JavaScript syntax
+        shell: bash
+        run: |
+          node --check release-hardening-v117.js
+          node --check khata-v050.js
+          node --check shared-trip-v090.js
+      - name: Professional dialog and trip controls
+        shell: bash
+        run: |
+          grep -q 'window.alert=function' release-hardening-v117.js
+          grep -q 'Trip already created' release-hardening-v117.js
+          grep -q 'tk117EditTrip' release-hardening-v117.js
+          grep -q 'confirmTripDelete' release-hardening-v117.js
+          grep -q 'Phone screen lock' android-wrapper/app/src/main/java/com/theposterwala/tripkhata/MainActivity.java
+      - name: Native contacts bridge
+        shell: bash
+        run: |
+          grep -q 'CommonDataKinds.Phone.CONTENT_URI' android-wrapper/app/src/main/java/com/theposterwala/tripkhata/MainActivity.java
+          grep -q 'TripKhataAndroid.pickContact' khata-v050.js
+          grep -q 'tripKhataNativeContact' khata-v050.js
+      - name: Shared Trip privacy and selection
+        shell: python
+        run: |
+          from pathlib import Path
+          s=Path('shared-trip-v090.js').read_text()
+          assert 'Select Trip to Share' in s
+          assert 'Customer Khata and Suppliers are never included' in s
+          assert 'function currentSnapshot()' in s
+          block=s[s.index('function currentSnapshot()'):s.index('async function addAudit')]
+          assert 'localStorage' not in block
+          assert 'khatabook' not in block.lower()
+          assert 'supplier' not in block.lower()
+          print('Selected-trip-only privacy PASS')
+      - name: Version/cache wiring
+        shell: python
+        run: |
+          from pathlib import Path
+          idx=Path('index.html').read_text()
+          sw=Path('sw.js').read_text()
+          assert './release-hardening-v117.js?v=117' in idx
+          assert './shared-trip-v090.js?v=117' in idx
+          assert './release-hardening-v117.js?v=117' in sw
+          assert "TRIPKHATA_VERSION='1.0.17'" in Path('version.js').read_text()
