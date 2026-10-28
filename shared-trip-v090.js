@@ -66,7 +66,7 @@ async function createInvite(id,ownerUid){
   return code;
 }
 function chooseTripForShare(){
-  const trips=Array.isArray(window.state?.trips)?window.state.trips:[];
+  const trips=(typeof state!=='undefined'&&Array.isArray(state.trips))?state.trips:[];
   if(!trips.length)return alert('Pehla ik trip create karo.');
   if(trips.length===1){
     state.active=trips[0].id;saveLocal();return createShareCurrent();
