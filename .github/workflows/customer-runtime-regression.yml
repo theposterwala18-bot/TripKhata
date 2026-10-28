@@ -1,0 +1,46 @@
+name: Customer Khata Runtime Regression
+on:
+  push:
+    branches: [ fix-customer-runtime-v1016 ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run malformed-data Customer Khata runtime test
+        shell: node
+        run: |
+          const fs=require('fs'),vm=require('vm');
+          const store=new Map([['tripkhata_khatabook_v1',JSON.stringify({supplierBusiness:{businesses:[],parties:[],entries:[]}})]]);
+          global.localStorage={getItem:k=>store.has(k)?store.get(k):null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)};
+          global.window=global; global.state={user:{name:'Tester'}};
+          const nodes={};
+          function node(id){return nodes[id]||(nodes[id]={id,innerHTML:'',style:{},children:[],appendChild(x){this.children.push(x)},remove(){},querySelector(){return null}})}
+          global.document={
+            body:{appendChild(x){if(x.id)nodes[x.id]=x}},
+            getElementById:id=>nodes[id]||null,
+            createElement:tag=>({tag,id:'',innerHTML:'',style:{},children:[],appendChild(x){this.children.push(x)}}),
+            querySelector:()=>null,
+            querySelectorAll:()=>[]
+          };
+          global.navigator={contacts:null,share:null,clipboard:null};
+          global.alert=(m)=>{throw new Error('Unexpected alert: '+m)};
+          global.confirm=()=>true;
+          global.FileReader=function(){};
+          global.Image=function(){};
+          vm.runInThisContext(fs.readFileSync('khata-v050.js','utf8'),{filename:'khata-v050.js'});
+          if(typeof kbRepairData!=='function')throw new Error('kbRepairData missing');
+          const repaired=kbRepairData();
+          if(repaired.customers!==0||repaired.suppliers!==0)throw new Error('Unexpected repaired counts');
+          kbOpenMain('customer');
+          const host=document.getElementById('kbHost');
+          if(!host||!/Customer Khata/.test(host.innerHTML))throw new Error('Customer Khata did not render');
+          console.log('Customer Khata malformed-data runtime PASS');
+      - name: Verify service switch has repair fallback
+        shell: bash
+        run: |
+          grep -q "kbRepairData" services-v051.js
+          grep -q "open('customer')" services-v051.js
