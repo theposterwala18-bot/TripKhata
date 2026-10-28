@@ -1,0 +1,31 @@
+name: Inspect Legacy Profile Shell
+on:
+  push:
+    branches: [ fix-cloud-restore-v1015 ]
+  workflow_dispatch:
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect embedded base
+        shell: python
+        run: |
+          import re,base64,gzip,pathlib
+          src=pathlib.Path('index.html').read_text(encoding='utf-8')
+          m=re.search(r'atob\("([A-Za-z0-9+/=]+)"\)',src)
+          html=gzip.decompress(base64.b64decode(m.group(1))).decode('utf-8')
+          terms=['Profile & Sync','Firebase/Supabase adapter point','Not connected','Export Backup','Import Backup']
+          out=[]
+          for term in terms:
+            start=0
+            while True:
+              i=html.find(term,start)
+              if i<0: break
+              out.append('\n### '+term+'\n'+html[max(0,i-2500):i+6500]+'\n')
+              start=i+len(term)
+          pathlib.Path('legacy-profile.txt').write_text(''.join(out),encoding='utf-8')
+      - uses: actions/upload-artifact@v4
+        with:
+          name: legacy-profile-inspection
+          path: legacy-profile.txt
