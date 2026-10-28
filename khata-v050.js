@@ -106,12 +106,22 @@
     }
   }
   function contactSupported(){return !!(navigator.contacts&&navigator.contacts.select)}
+  let pendingContactCallback=null;
+  window.tripKhataNativeContact=function(name,phone,error){
+    const cb=pendingContactCallback;pendingContactCallback=null;
+    if(error)return alert('Contact picker error: '+error);
+    if(cb&&(name||phone))cb({name:name||'',phone:phone||''});
+  };
   async function pickContact(cb){
-    if(!contactSupported()){alert('Is browser vich direct Contacts access supported nahi. Android Chrome/APK vich available hovega. Filhal manually name/phone add karo.');return}
+    if(window.TripKhataAndroid&&typeof window.TripKhataAndroid.pickContact==='function'){
+      pendingContactCallback=cb;
+      try{window.TripKhataAndroid.pickContact();return}catch(e){pendingContactCallback=null}
+    }
+    if(!contactSupported()){alert('Phone Contacts picker is not available on this device. You can enter the name and phone manually.');return}
     try{
       const c=await navigator.contacts.select(['name','tel'],{multiple:false});
       if(c?.[0])cb({name:c[0].name?.[0]||'',phone:c[0].tel?.[0]||''});
-    }catch(e){}
+    }catch(e){if(e?.name!=='AbortError')alert('Unable to open Contacts. Please try again.')}
   }
   function host(){
     let h=document.getElementById('kbHost');if(!h){h=document.createElement('div');h.id='kbHost';document.body.appendChild(h)}return h;

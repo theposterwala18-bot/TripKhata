@@ -2,7 +2,7 @@ name: Verify TripKhata Play Store Android Build
 
 on:
   push:
-    branches: [ playstore-release-v1.0.16 ]
+    branches: [ playstore-release-v1.0.17 ]
     paths:
       - 'android-wrapper/**'
       - 'auth-v100.js'
@@ -42,7 +42,7 @@ jobs:
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
-          name: TripKhata-v1.0.16-final-icon-test-apk
+          name: TripKhata-v1.0.17-final-icon-test-apk
           path: android-wrapper/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Compile release APK
@@ -52,7 +52,7 @@ jobs:
       - name: Upload unsigned release APK
         uses: actions/upload-artifact@v4
         with:
-          name: TripKhata-v1.0.16-unsigned-release-apk
+          name: TripKhata-v1.0.17-unsigned-release-apk
           path: android-wrapper/app/build/outputs/apk/release/app-release-unsigned.apk
 
       - name: Compile release AAB
@@ -62,7 +62,7 @@ jobs:
       - name: Upload unsigned verification bundle
         uses: actions/upload-artifact@v4
         with:
-          name: TripKhata-v1.0.16-unsigned-verification
+          name: TripKhata-v1.0.17-unsigned-verification
           path: android-wrapper/app/build/outputs/bundle/release/app-release.aab
 
 # stable test signing refresh
@@ -82,3 +82,5 @@ jobs:
 # critical initial-restore gate and legacy-profile cleanup verification
 
 # customer-khata runtime repair verification
+
+# release hardening: dialogs, contacts, secure trip management, selected-trip sharing

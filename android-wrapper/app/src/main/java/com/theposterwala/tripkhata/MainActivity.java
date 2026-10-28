@@ -1,9 +1,12 @@
 package com.theposterwala.tripkhata;
 
 import android.app.Activity;
+import android.app.KeyguardManager;
 import android.content.Intent;
+import android.database.Cursor;
 import android.content.MutableContextWrapper;
 import android.net.Uri;
+import android.provider.ContactsContract;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.webkit.JavascriptInterface;
@@ -32,6 +35,9 @@ public class MainActivity extends Activity {
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
     private static final int FILE_CHOOSER_REQUEST = 1001;
+    private static final int CONTACT_PICK_REQUEST = 1002;
+    private static final int DEVICE_CREDENTIAL_REQUEST = 1003;
+    private String pendingCredentialRequestId = null;
     private CredentialManager credentialManager;
 
     @Override
@@ -50,7 +56,7 @@ public class MainActivity extends Activity {
         s.setAllowFileAccess(true);
         s.setAllowContentAccess(true);
         s.setMediaPlaybackRequiresUserGesture(false);
-        s.setUserAgentString(s.getUserAgentString() + " TripKhataAndroid/1.0.16");
+        s.setUserAgentString(s.getUserAgentString() + " TripKhataAndroid/1.0.17");
 
         webView.addJavascriptInterface(new AndroidBridge(), "TripKhataAndroid");
 
@@ -104,6 +110,43 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void signInWithGoogle() {
             runOnUiThread(MainActivity.this::startGoogleSignIn);
+        }
+
+        @JavascriptInterface
+        public void pickContact() {
+            runOnUiThread(() -> {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI);
+                    startActivityForResult(intent, CONTACT_PICK_REQUEST);
+                } catch (Exception e) {
+                    sendContact("", "", e.getLocalizedMessage());
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void confirmTripDelete(String requestId, String tripName) {
+            runOnUiThread(() -> {
+                try {
+                    KeyguardManager km = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
+                    if (km == null || !km.isDeviceSecure()) {
+                        sendCredentialResult(requestId, false, "Phone screen lock is not set. Set a PIN, pattern or password first.");
+                        return;
+                    }
+                    Intent intent = km.createConfirmDeviceCredentialIntent(
+                            "Delete Trip",
+                            "Confirm phone PIN/pattern/password to delete " + (tripName == null ? "this trip" : tripName)
+                    );
+                    if (intent == null) {
+                        sendCredentialResult(requestId, false, "Device credential confirmation is unavailable.");
+                        return;
+                    }
+                    pendingCredentialRequestId = requestId;
+                    startActivityForResult(intent, DEVICE_CREDENTIAL_REQUEST);
+                } catch (Exception e) {
+                    sendCredentialResult(requestId, false, e.getLocalizedMessage());
+                }
+            });
         }
     }
 
@@ -166,6 +209,29 @@ public class MainActivity extends Activity {
         ));
     }
 
+
+    private void sendContact(String name, String phone, String error) {
+        if (webView == null) return;
+        String safeName = name == null ? "" : name;
+        String safePhone = phone == null ? "" : phone;
+        String safeError = error == null ? "" : error;
+        runOnUiThread(() -> webView.evaluateJavascript(
+                "window.tripKhataNativeContact && window.tripKhataNativeContact(" +
+                        JSONObject.quote(safeName) + "," + JSONObject.quote(safePhone) + "," + JSONObject.quote(safeError) + ");",
+                null
+        ));
+    }
+
+    private void sendCredentialResult(String requestId, boolean ok, String message) {
+        if (webView == null || requestId == null) return;
+        String safeMessage = message == null ? "" : message;
+        runOnUiThread(() -> webView.evaluateJavascript(
+                "window.tripKhataNativeCredentialResult && window.tripKhataNativeCredentialResult(" +
+                        JSONObject.quote(requestId) + "," + (ok ? "true" : "false") + "," + JSONObject.quote(safeMessage) + ");",
+                null
+        ));
+    }
+
     private void sendGoogleError(String message) {
         if (webView == null) return;
         String safe = (message == null || message.trim().isEmpty())
@@ -185,6 +251,45 @@ public class MainActivity extends Activity {
             Uri[] results = WebChromeClient.FileChooserParams.parseResult(resultCode, data);
             filePathCallback.onReceiveValue(results);
             filePathCallback = null;
+            return;
+        }
+
+        if (requestCode == CONTACT_PICK_REQUEST) {
+            if (resultCode != RESULT_OK || data == null || data.getData() == null) {
+                sendContact("", "", "");
+                return;
+            }
+            Uri uri = data.getData();
+            Cursor cursor = null;
+            try {
+                cursor = getContentResolver().query(
+                        uri,
+                        new String[]{
+                                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                                ContactsContract.CommonDataKinds.Phone.NUMBER
+                        },
+                        null, null, null
+                );
+                if (cursor != null && cursor.moveToFirst()) {
+                    String name = cursor.getString(0);
+                    String phone = cursor.getString(1);
+                    sendContact(name, phone, "");
+                } else {
+                    sendContact("", "", "Unable to read selected contact.");
+                }
+            } catch (Exception e) {
+                sendContact("", "", e.getLocalizedMessage());
+            } finally {
+                if (cursor != null) cursor.close();
+            }
+            return;
+        }
+
+        if (requestCode == DEVICE_CREDENTIAL_REQUEST) {
+            String requestId = pendingCredentialRequestId;
+            pendingCredentialRequestId = null;
+            sendCredentialResult(requestId, resultCode == RESULT_OK,
+                    resultCode == RESULT_OK ? "" : "Delete cancelled.");
         }
     }
 
