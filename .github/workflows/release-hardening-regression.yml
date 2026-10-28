@@ -52,4 +52,4 @@ jobs:
           assert './release-hardening-v117.js?v=117' in idx
           assert './shared-trip-v090.js?v=117' in idx
           assert './release-hardening-v117.js?v=117' in sw
-          assert "TRIPKHATA_VERSION='1.0.17'" in Path('version.js').read_text()
+          assert "TRIPKHATA_VERSION='1.0.18'" in Path('version.js').read_text()
