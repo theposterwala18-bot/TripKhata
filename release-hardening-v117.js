@@ -62,7 +62,7 @@ if(typeof originalCreateTrip==='function'){
   };
 }
 
-function tripById(tid){return (window.state?.trips||[]).find(t=>String(t.id)===String(tid))}
+function tripById(tid){return ((typeof state!=='undefined'&&Array.isArray(state.trips))?state.trips:[]).find(t=>String(t.id)===String(tid))}
 function editTrip(tid){
   const t=tripById(tid);if(!t)return tkAlert('Trip not found.','Error');
   const root=document.getElementById('modalRoot');if(!root)return;
