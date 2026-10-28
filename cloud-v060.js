@@ -20,13 +20,13 @@
       window.TRIPKHATA_CLOUD.status="not-configured";
       return {enabled:false,status:"not-configured"};
     }
-    window.TRIPKHATA_CLOUD.status="config-present";
-    return {enabled:false,status:"config-present"};
+    const live=window.TRIPKHATA_CLOUD?.status;
+    return {enabled:!!window.TRIPKHATA_CLOUD?.enabled,status:live||"config-present"};
   };
 
-  // Reserved public API for the next step after Firebase project setup.
+  // Compatibility bridge. Real Firebase auth/sync is initialized by auth-v100.js + sync-v060.js.
   window.tripKhataCloudInit=async function(){
     if(!configured()) throw new Error("Firebase config missing");
-    throw new Error("Firebase SDK wiring pending project credentials");
+    return window.TRIPKHATA_CLOUD;
   };
 })();
