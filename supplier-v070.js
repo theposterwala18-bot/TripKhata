@@ -77,17 +77,43 @@ function businessForm(id){
  shell(id?'Edit Business':'Add Business / Shop / Farm / Company','<main class="s70pad"><section class="s70card s70form"><label>Business / Shop / Farm / Company Name<input id="s70bn" value="'+esc(b.name||'')+'" placeholder="Mr Dhaliwal Creation"></label><label>Mobile<input id="s70bp" value="'+esc(b.phone||'')+'" inputmode="tel"></label><label>Address<textarea id="s70ba">'+esc(b.address||'')+'</textarea></label><button class="s70primary" id="s70saveb">Save Business</button></section></main>',id?businesses:home);
  q('#s70saveb').onclick=function(){var n=q('#s70bn').value.trim();if(!n)return alert('Business name required.');change(function(z){if(id){Object.assign(z.businesses.find(function(a){return a.id===id}),{name:n,phone:q('#s70bp').value.trim(),address:q('#s70ba').value.trim()})}else{var nb={id:nid(),name:n,phone:q('#s70bp').value.trim(),address:q('#s70ba').value.trim(),createdAt:new Date().toISOString()};z.businesses.push(nb);z.activeBusinessId=nb.id}});home()};
 }
-function partyForm(bid){
- shell('Add Supplier / Party','<main class="s70pad"><section class="s70card s70form"><label>Name<input id="s70pn"></label><label>Mobile<input id="s70pp" inputmode="tel"></label><label>Address<textarea id="s70pa"></textarea></label><label>Party Type<select id="s70pr"><option value="supplier">Supplier</option><option value="customer">Customer</option><option value="both">Customer + Supplier</option></select></label><div class="s70split"><label>Opening Balance<input id="s70ob" type="number" value="0"></label><label>Balance Side<select id="s70os"><option value="payable">We have to pay</option><option value="receivable">We have to receive</option></select></label></div><button class="s70primary" id="s70savep">Save Party</button></section></main>',home);
- q('#s70savep').onclick=function(){var n=q('#s70pn').value.trim();if(!n)return alert('Party name required.');change(function(z){var p={id:nid(),businessId:bid,name:n,phone:q('#s70pp').value.trim(),address:q('#s70pa').value.trim(),role:q('#s70pr').value,createdAt:new Date().toISOString()};z.parties.push(p);var ob=Number(q('#s70ob').value)||0;if(ob>0)z.entries.push({id:nid(),businessId:bid,partyId:p.id,type:q('#s70os').value==='payable'?'opening_payable':'opening_receivable',mode:'quick',amount:ob,notes:'Opening Balance',date:new Date().toISOString(),createdAt:new Date().toISOString(),items:[]})});home()};
+function partyForm(bid,pid){
+ var d=db().d,p=pid?d.parties.find(function(x){return x.id===pid}):null;
+ if(pid&&!p)return home();
+ var back=pid?function(){ledger(pid)}:home;
+ shell(pid?'Edit Supplier / Party':'Add Supplier / Party',
+ '<main class="s70pad"><section class="s70card s70form">'+
+ '<label>Name<input id="s70pn" value="'+esc(p&&p.name||'')+'"></label>'+
+ '<label>Mobile<input id="s70pp" inputmode="tel" value="'+esc(p&&p.phone||'')+'"></label>'+
+ '<label>Address<textarea id="s70pa">'+esc(p&&p.address||'')+'</textarea></label>'+
+ '<label>Party Type<select id="s70pr"><option value="supplier">Supplier</option><option value="customer">Customer</option><option value="both">Customer + Supplier</option></select></label>'+
+ (pid?'':'<div class="s70split"><label>Opening Balance<input id="s70ob" type="number" value="0"></label><label>Balance Side<select id="s70os"><option value="payable">We have to pay</option><option value="receivable">We have to receive</option></select></label></div>')+
+ '<button class="s70primary" id="s70savep">'+(pid?'Update Party':'Save Party')+'</button></section></main>',back);
+ q('#s70pr').value=(p&&p.role)||'supplier';
+ q('#s70savep').onclick=function(){
+   var n=q('#s70pn').value.trim();if(!n)return alert('Party name required.');
+   var phone=q('#s70pp').value.trim(),address=q('#s70pa').value.trim(),role=q('#s70pr').value;
+   change(function(z){
+     if(pid){
+       var ep=z.parties.find(function(x){return x.id===pid});if(!ep)return;
+       Object.assign(ep,{name:n,phone:phone,address:address,role:role,updatedAt:new Date().toISOString()});
+     }else{
+       var np={id:nid(),businessId:bid,name:n,phone:phone,address:address,role:role,createdAt:new Date().toISOString()};
+       z.parties.push(np);
+       var ob=Number(q('#s70ob').value)||0;
+       if(ob>0)z.entries.push({id:nid(),businessId:bid,partyId:np.id,type:q('#s70os').value==='payable'?'opening_payable':'opening_receivable',mode:'quick',amount:ob,notes:'Opening Balance',date:new Date().toISOString(),createdAt:new Date().toISOString(),items:[]});
+     }
+   });
+   pid?ledger(pid):home();
+ };
 }
 function ledger(pid){
  var d=db().d,p=d.parties.find(function(x){return x.id===pid});if(!p)return home();var b=d.businesses.find(function(x){return x.id===p.businessId}),es=pEntries(d,pid),z=balance(d,pid);
  var pu=0,sa=0,pm=0,pr=0;es.forEach(function(e){if(e.type==='purchase')pu+=e.amount;if(e.type==='sale')sa+=e.amount;if(e.type==='payment_made')pm+=e.amount;if(e.type==='payment_received')pr+=e.amount});
  var names={purchase:'Purchase',sale:'Sale',payment_made:'Payment Made',payment_received:'Payment Received',opening_payable:'Opening Balance',opening_receivable:'Opening Balance'};
  var rows=es.map(function(e){var pos=delta(e)>0,note=e.mode==='items'?(e.items||[]).map(function(i){return i.name+' × '+i.qty}).join(', '):(e.notes||names[e.type]);return '<button class="s70entry" data-e="'+e.id+'"><span><small>'+new Date(e.date).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'})+'</small><b>'+names[e.type]+'</b><em>'+esc(note)+'</em></span><strong class="'+(pos?'red':'green')+'">'+(pos?'+':'−')+money(e.amount)+'</strong></button>'}).join('')||'<div class="s70empty">No transactions yet.</div>';
- shell(p.name,'<main class="s70pad"><section class="s70partytop"><div><b>'+esc(p.name)+'</b><span>'+esc(p.phone||'No phone')+'</span><small>'+esc(b.name)+'</small></div></section><section class="s70balance '+(z>0?'pay':'get')+'"><span>'+(z>0?'You Have To Pay':z<0?'You Have To Receive':'Account Clear')+'</span><b>'+money(Math.abs(z))+'</b></section><div class="s70actions s70actions3"><button id="s70stmt">📄 Statement</button><button id="s70share">↗ Share</button><button id="s70remind">🔔 Reminder</button></div><button id="s70connected" class="s70ghost" style="width:100%;margin:8px 0 2px">🔗 Connected Khata (Beta)</button><section class="s70mini"><div><small>Purchase</small><b>'+money(pu)+'</b></div><div><small>Sale</small><b>'+money(sa)+'</b></div><div><small>Paid</small><b>'+money(pm)+'</b></div><div><small>Received</small><b>'+money(pr)+'</b></div></section><h3>Transactions</h3><section class="s70rows">'+rows+'</section><div class="s70bottom"><button class="g" id="s70purchase">Purchase</button><button class="b" id="s70sale">Sale</button><button class="r" id="s70pay">Pay</button><button class="t" id="s70receive">Receive</button></div></main>',home);
- var rb=q('#s70remind');if(rb)rb.onclick=function(){reminderOne(pid)};q('#s70purchase').onclick=function(){entry(pid,'purchase')};q('#s70sale').onclick=function(){entry(pid,'sale')};q('#s70pay').onclick=function(){payment(pid,'payment_made')};q('#s70receive').onclick=function(){payment(pid,'payment_received')};q('#s70stmt').onclick=function(){statement(pid)};q('#s70share').onclick=function(){shareParty(pid)};var cb=q('#s70connected');if(cb)cb.onclick=function(){if(window.tripKhataConnectedParty)window.tripKhataConnectedParty(pid);else alert('Connected Khata module is loading. Please try again.')};document.querySelectorAll('.s70entry').forEach(function(el){el.onclick=function(){detail(pid,Number(el.dataset.e))}});
+ shell(p.name,'<main class="s70pad"><section class="s70partytop"><div><b>'+esc(p.name)+'</b><span>'+esc(p.phone||'No phone')+'</span><small>'+esc(b.name)+'</small></div><button id="s70editparty" class="s70ghost">✏️ Edit Party</button></section><section class="s70balance '+(z>0?'pay':'get')+'"><span>'+(z>0?'You Have To Pay':z<0?'You Have To Receive':'Account Clear')+'</span><b>'+money(Math.abs(z))+'</b></section><div class="s70actions s70actions3"><button id="s70stmt">📄 Statement</button><button id="s70share">↗ Share</button><button id="s70remind">🔔 Reminder</button></div><button id="s70connected" class="s70ghost" style="width:100%;margin:8px 0 2px">🔗 Connected Khata (Beta)</button><section class="s70mini"><div><small>Purchase</small><b>'+money(pu)+'</b></div><div><small>Sale</small><b>'+money(sa)+'</b></div><div><small>Paid</small><b>'+money(pm)+'</b></div><div><small>Received</small><b>'+money(pr)+'</b></div></section><h3>Transactions</h3><section class="s70rows">'+rows+'</section><div class="s70bottom"><button class="g" id="s70purchase">Purchase</button><button class="b" id="s70sale">Sale</button><button class="r" id="s70pay">Pay</button><button class="t" id="s70receive">Receive</button></div></main>',home);
+ var epb=q('#s70editparty');if(epb)epb.onclick=function(){partyForm(p.businessId,pid)};var rb=q('#s70remind');if(rb)rb.onclick=function(){reminderOne(pid)};q('#s70purchase').onclick=function(){entry(pid,'purchase')};q('#s70sale').onclick=function(){entry(pid,'sale')};q('#s70pay').onclick=function(){payment(pid,'payment_made')};q('#s70receive').onclick=function(){payment(pid,'payment_received')};q('#s70stmt').onclick=function(){statement(pid)};q('#s70share').onclick=function(){shareParty(pid)};var cb=q('#s70connected');if(cb)cb.onclick=function(){if(window.tripKhataConnectedParty)window.tripKhataConnectedParty(pid);else alert('Connected Khata module is loading. Please try again.')};document.querySelectorAll('.s70entry').forEach(function(el){el.onclick=function(){detail(pid,Number(el.dataset.e))}});
 }
 function entry(pid,type,eid){
  var d=db().d,p=d.parties.find(function(x){return x.id===pid}),old=eid?d.entries.find(function(x){return x.id===eid}):null,
